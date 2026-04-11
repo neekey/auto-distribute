@@ -1,0 +1,11 @@
+# OS
+.DS_Store
+
+# Environment
+.env
+
+# Claude
+.claude/plans/
+
+# State files (local tracking data)
+state/
