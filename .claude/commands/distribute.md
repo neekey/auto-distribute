@@ -15,9 +15,17 @@ If `PRODUCT.md` exists at the project root, read it. Otherwise, ask the user:
 
 Generate `PRODUCT.md` from their answers.
 
-## Step 2: Research
+## Step 2: Research & Extract
 
-1. **Fetch the product's landing page** — understand the current messaging, features listed, and SEO state
+1. **Fetch the product's landing page** — extract:
+   - Product name, tagline, and headline copy
+   - Feature descriptions and benefit statements
+   - Pricing information
+   - Meta title, meta description, OG tags
+   - Any existing social proof (testimonials, user counts, logos)
+   - Tech stack or integration mentions
+   - Competitor positioning clues
+
 2. **Extract and save media assets** — create `assets/` directory if it doesn't exist, then:
    - Parse the page HTML for logo (`<link rel="icon">`, `<link rel="apple-touch-icon">`, logo `<img>` in header/nav), OG image (`<meta property="og:image">`), and favicon
    - Download each to `assets/`:
@@ -28,18 +36,22 @@ Generate `PRODUCT.md` from their answers.
      curl -L -o assets/favicon.png "{favicon URL}"
      ```
    - Report what was saved and what was missing
+
 3. **Search X and Reddit** for the problem domain:
    ```bash
    stride channel x search "{problem keywords}" --max 30 --json
    stride channel reddit search "{problem keywords}" --max 30 --json
    ```
+
 4. Identify:
    - Which communities are discussing this problem
    - What language/terms people use (for copy)
    - Competitors being mentioned
    - Gaps in existing solutions people complain about
 
-## Step 3: Distribution Plan
+## Step 3: Generate Copy & Distribution Plan
+
+Using the landing page content, social research, and PRODUCT.md, **auto-generate all submission copy**. Do not leave placeholders — write real, usable copy based on what was extracted. The user can refine later.
 
 Generate `DISTRIBUTION.md` with a prioritized plan:
 
@@ -89,22 +101,25 @@ Generate `DISTRIBUTION.md` with a prioritized plan:
 ## Submission Assets
 
 Standard copy and assets reused across launch platforms, directories, and social media.
+All copy below is auto-generated from the product landing page — review and refine as needed.
 
 ### Copy
-- **One-liner**: {tagline, ~60 chars}
-- **Short description**: {1-2 sentences, ~150 chars}
-- **Medium description**: {1 paragraph, ~300 chars}
-- **Long description**: {2-3 paragraphs, features + differentiators + audience}
-- **Problem statement**: {what pain point does this solve}
-- **Key features**: {bullet list of 3-5 features}
-- **Competitor alternatives**: {list — for AlternativeTo-style sites}
+- **One-liner**: {write a real tagline based on landing page, ~60 chars}
+- **Short description**: {write 1-2 sentences from page headline + subheadline, ~150 chars}
+- **Medium description**: {write 1 paragraph combining key value prop + differentiator, ~300 chars}
+- **Long description**: {write 2-3 paragraphs covering what it does, key features, who it's for, and what makes it different}
+- **Problem statement**: {write the pain point based on landing page messaging and social research}
+- **Key features**: {extract 3-5 features from the landing page}
+- **Competitor alternatives**: {identify competitors from landing page positioning and social research}
 
 ### Platform-Specific Copy
-- **Tweet-length**: {280 chars}
-- **Reddit title**: {for different subreddits}
-- **Product Hunt tagline**: {60 chars}
-- **Product Hunt description**: {260 chars}
-- **HN Show HN title**: {format: Show HN: Product — description}
+- **Tweet-length**: {write a compelling tweet, 280 chars, conversational tone}
+- **Reddit title**: {write titles for different subreddits — educational/question format}
+- **Product Hunt tagline**: {write PH-style tagline, 60 chars, benefit-focused}
+- **Product Hunt description**: {write PH description, 260 chars}
+- **Product Hunt maker's comment**: {write 2-3 paragraph authentic maker story}
+- **HN Show HN title**: {Show HN: Product — concise technical description}
+- **HN first comment**: {write technical backstory — problem, how you built it, what's different}
 
 ### Assets (`assets/` directory)
 
