@@ -24,6 +24,7 @@ Auto-distribute is a set of Claude Code commands (`.claude/commands/`) that orch
 | `/submit` | Submit to launch platforms and directories (replaces `/launch` + `/directories`) |
 | `/social` | Post and engage on X and Reddit via Stride CLI |
 | `/seo-audit` | Audit landing page SEO (meta tags, OG, sitemap, speed) |
+| `/seo-content` | Research keywords and generate SEO pages/blog content |
 | `/search-console` | Google Search Console: submit URLs, check indexing |
 | `/sync-template` | Pull latest commands/docs from the auto-distribute template repo |
 
