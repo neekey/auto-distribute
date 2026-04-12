@@ -144,7 +144,6 @@ Manual (user needs to prepare):
 
 Tell the user:
 - Review `DISTRIBUTION.md` and adjust priorities
-- Run `/launch` to start submitting to launch platforms
-- Run `/directories` to find and submit to directories
+- Run `/submit` to start submitting to launch platforms and directories
 - Run `/social` to start social media distribution
 - Run `/seo-audit` to audit and fix SEO issues
