@@ -2,6 +2,12 @@ Submit product to launch platforms and directories. Uses standard copy from DIST
 
 The user specifies which platform(s), a category (e.g. "ai", "dev", "all"), or says "next": $ARGUMENTS
 
+## Step 0: Resolve Project Path
+
+Check if `$ARGUMENTS` contains `--project <path>`. If yes, extract the path and use it as the base directory for all per-product files (`PRODUCT.md`, `DISTRIBUTION.md`, `state/`, `assets/`). Remove `--project <path>` from arguments before processing. Template files (`PLATFORMS.md`) are always read from the auto-distribute directory.
+
+If no `--project`, use the current working directory.
+
 ## Step 1: Read Context
 
 1. Read `PRODUCT.md` — product details. If missing, ask user to run `/distribute` first.

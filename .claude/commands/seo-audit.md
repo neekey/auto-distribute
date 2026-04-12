@@ -2,6 +2,12 @@ Audit a product's landing page for SEO issues and suggest fixes.
 
 The user provides a URL or says "audit": $ARGUMENTS
 
+## Step 0: Resolve Project Path
+
+Check if `$ARGUMENTS` contains `--project <path>`. If yes, extract the path and use it as the base directory for all per-product files (`PRODUCT.md`, `state/`). Remove `--project <path>` from arguments before processing.
+
+If no `--project`, use the current working directory.
+
 ## Step 1: Read Context
 
 1. Read `PRODUCT.md` — get the product URL. If no URL provided in arguments, use the website URL from PRODUCT.md.

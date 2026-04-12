@@ -2,6 +2,12 @@ Manage Google Search Console: submit URLs for indexing and check status.
 
 The user provides context: $ARGUMENTS
 
+## Step 0: Resolve Project Path
+
+Check if `$ARGUMENTS` contains `--project <path>`. If yes, extract the path and use it as the base directory for all per-product files (`PRODUCT.md`, `state/`). Remove `--project <path>` from arguments before processing.
+
+If no `--project`, use the current working directory.
+
 ## Step 1: Read Context
 
 1. Read `PRODUCT.md` — get the product URL.

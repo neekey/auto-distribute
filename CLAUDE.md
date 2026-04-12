@@ -29,9 +29,29 @@ Auto-distribute is a set of Claude Code commands (`.claude/commands/`) that orch
 | `/search-console` | Google Search Console: submit URLs, check indexing |
 | `/sync-template` | Pull latest commands/docs from the auto-distribute template repo |
 
+## Target Project
+
+All commands support an optional `--project <path>` parameter to target a different project directory.
+
+```bash
+# Examples:
+/distribute --project ~/workspaces/my-saas
+/submit product hunt --project ~/workspaces/my-saas
+/seo-audit --project ~/workspaces/my-saas
+```
+
+**How it works:** When `--project` is provided, all per-product files are read from and written to that directory instead of the current working directory:
+- `PRODUCT.md`, `DISTRIBUTION.md` → target project
+- `state/`, `assets/` → target project
+- `PLATFORMS.md`, `.claude/commands/` → stay in auto-distribute (template files)
+
+When `--project` is not provided, everything defaults to the current working directory (backwards compatible).
+
+**Important:** When processing command arguments, extract and remove `--project <path>` before passing the rest to the command logic. For example, `/submit product hunt --project ~/workspaces/my-saas` → platform argument is "product hunt", project path is "~/workspaces/my-saas".
+
 ## Project Config
 
-Each product being distributed has a `PRODUCT.md` at the project root:
+Each product being distributed has a `PRODUCT.md` at the project root (or at the target project root):
 
 ```markdown
 # Product: {name}

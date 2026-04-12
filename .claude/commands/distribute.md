@@ -2,9 +2,15 @@ Analyze a product and create a distribution strategy.
 
 The user provides product context: $ARGUMENTS
 
+## Step 0: Resolve Project Path
+
+Check if `$ARGUMENTS` contains `--project <path>`. If yes, extract the path and use it as the base directory for all per-product files (`PRODUCT.md`, `DISTRIBUTION.md`, `state/`, `assets/`). Remove `--project <path>` from arguments before processing. Template files (`PLATFORMS.md`) are always read from the auto-distribute directory.
+
+If no `--project`, use the current working directory.
+
 ## Step 1: Understand the Product
 
-If `PRODUCT.md` exists at the project root, read it. Otherwise, ask the user:
+If `PRODUCT.md` exists at the project root (or target project), read it. Otherwise, ask the user:
 
 1. **Product name** and URL
 2. **What it does** — one paragraph description

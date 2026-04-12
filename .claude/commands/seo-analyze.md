@@ -4,6 +4,12 @@ This command closes the feedback loop: /seo-content creates pages → /seo-analy
 
 The user provides context or a focus area: $ARGUMENTS
 
+## Step 0: Resolve Project Path
+
+Check if `$ARGUMENTS` contains `--project <path>`. If yes, extract the path and use it as the base directory for all per-product files (`PRODUCT.md`, `DISTRIBUTION.md`, `state/`). Remove `--project <path>` from arguments before processing.
+
+If no `--project`, use the current working directory.
+
 ## Step 1: Read Context
 
 1. Read `PRODUCT.md` — product details, URLs.
