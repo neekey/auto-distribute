@@ -148,7 +148,7 @@ For each directory, map the standard fields to what the directory's form require
 | Medium description (150-300 chars) | Medium description |
 | Long description | Long description |
 | Category/tags | Metadata → Category/tags |
-| Screenshots | Assets Checklist |
+| Screenshots/logo | `assets/` directory (logo.png, screenshot-*.png, og-image.png) |
 | Competitors/alternatives | Copy → Competitor alternatives |
 | Pricing | Metadata → Pricing summary |
 | Key features | Copy → Key features |

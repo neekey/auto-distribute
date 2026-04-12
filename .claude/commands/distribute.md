@@ -18,12 +18,22 @@ Generate `PRODUCT.md` from their answers.
 ## Step 2: Research
 
 1. **Fetch the product's landing page** — understand the current messaging, features listed, and SEO state
-2. **Search X and Reddit** for the problem domain:
+2. **Extract and save media assets** — create `assets/` directory if it doesn't exist, then:
+   - Parse the page HTML for logo (`<link rel="icon">`, `<link rel="apple-touch-icon">`, logo `<img>` in header/nav), OG image (`<meta property="og:image">`), and favicon
+   - Download each to `assets/`:
+     ```bash
+     mkdir -p assets
+     curl -L -o assets/og-image.png "{og:image URL}"
+     curl -L -o assets/logo.png "{logo URL}"
+     curl -L -o assets/favicon.png "{favicon URL}"
+     ```
+   - Report what was saved and what was missing
+3. **Search X and Reddit** for the problem domain:
    ```bash
    stride channel x search "{problem keywords}" --max 30 --json
    stride channel reddit search "{problem keywords}" --max 30 --json
    ```
-3. Identify:
+4. Identify:
    - Which communities are discussing this problem
    - What language/terms people use (for copy)
    - Competitors being mentioned
@@ -96,13 +106,18 @@ Standard copy and assets reused across launch platforms, directories, and social
 - **Product Hunt description**: {260 chars}
 - **HN Show HN title**: {format: Show HN: Product — description}
 
-### Assets Checklist
-- [ ] Logo (square, high-res PNG)
-- [ ] Screenshot 1: {specific screen — e.g. main dashboard}
-- [ ] Screenshot 2: {specific screen — e.g. key feature in action}
-- [ ] Screenshot 3: {specific screen — e.g. results/output}
-- [ ] GIF/video demo (optional, for Product Hunt gallery)
-- [ ] OG image (1200x630)
+### Assets (`assets/` directory)
+
+Auto-fetched from product website:
+- [{saved|missing}] `assets/logo.png` — site logo
+- [{saved|missing}] `assets/og-image.png` — OG image (1200x630)
+- [{saved|missing}] `assets/favicon.png` — favicon
+
+Manual (user needs to prepare):
+- [ ] `assets/screenshot-1.png`: {specific screen — e.g. main dashboard}
+- [ ] `assets/screenshot-2.png`: {specific screen — e.g. key feature in action}
+- [ ] `assets/screenshot-3.png`: {specific screen — e.g. results/output}
+- [ ] `assets/demo.gif` or `assets/demo.mp4` (optional, for Product Hunt gallery)
 
 ### Metadata
 - **Category/tags**: {list of relevant categories}

@@ -26,6 +26,7 @@ Auto-distribute is a set of Claude Code commands (`.claude/commands/`) that orch
 | `/social` | Post and engage on X and Reddit via Stride CLI |
 | `/seo-audit` | Audit landing page SEO (meta tags, OG, sitemap, speed) |
 | `/search-console` | Google Search Console: submit URLs, check indexing |
+| `/sync-template` | Pull latest commands/docs from the auto-distribute template repo |
 
 ## Project Config
 
@@ -50,6 +51,15 @@ Each product being distributed has a `PRODUCT.md` at the project root:
 ## Pricing
 {Free / Freemium / Paid — brief pricing summary}
 ```
+
+## Product Assets
+
+Media assets are stored in `assets/` (gitignored):
+- `assets/logo.png` — site logo (auto-fetched by `/distribute`)
+- `assets/og-image.png` — OG image (auto-fetched by `/distribute`)
+- `assets/favicon.png` — favicon (auto-fetched by `/distribute`)
+- `assets/screenshot-*.png` — product screenshots (user-provided)
+- `assets/demo.gif` / `assets/demo.mp4` — demo video (user-provided)
 
 ## State Tracking
 

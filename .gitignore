@@ -9,3 +9,6 @@
 
 # State files (local tracking data)
 state/
+
+# Product assets (screenshots, logos, OG images)
+assets/
