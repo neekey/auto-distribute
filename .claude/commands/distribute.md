@@ -76,14 +76,38 @@ Generate `DISTRIBUTION.md` with a prioritized plan:
 - Target keywords: {list}
 - Content opportunities: {blog post ideas targeting search terms}
 
-## Copy Bank
-Platform-specific copy ready to use:
-- **One-liner**: {tagline}
+## Submission Assets
+
+Standard copy and assets reused across launch platforms, directories, and social media.
+
+### Copy
+- **One-liner**: {tagline, ~60 chars}
+- **Short description**: {1-2 sentences, ~150 chars}
+- **Medium description**: {1 paragraph, ~300 chars}
+- **Long description**: {2-3 paragraphs, features + differentiators + audience}
+- **Problem statement**: {what pain point does this solve}
+- **Key features**: {bullet list of 3-5 features}
+- **Competitor alternatives**: {list — for AlternativeTo-style sites}
+
+### Platform-Specific Copy
 - **Tweet-length**: {280 chars}
 - **Reddit title**: {for different subreddits}
 - **Product Hunt tagline**: {60 chars}
 - **Product Hunt description**: {260 chars}
 - **HN Show HN title**: {format: Show HN: Product — description}
+
+### Assets Checklist
+- [ ] Logo (square, high-res PNG)
+- [ ] Screenshot 1: {specific screen — e.g. main dashboard}
+- [ ] Screenshot 2: {specific screen — e.g. key feature in action}
+- [ ] Screenshot 3: {specific screen — e.g. results/output}
+- [ ] GIF/video demo (optional, for Product Hunt gallery)
+- [ ] OG image (1200x630)
+
+### Metadata
+- **Category/tags**: {list of relevant categories}
+- **Pricing summary**: {free / freemium / paid — brief}
+- **Founders**: {names and roles}
 ```
 
 ## Step 4: Next Steps
