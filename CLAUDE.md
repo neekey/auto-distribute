@@ -82,12 +82,38 @@ Media assets are stored in `assets/` (gitignored):
 - `assets/screenshot-*.png` — product screenshots (user-provided)
 - `assets/demo.gif` / `assets/demo.mp4` — demo video (user-provided)
 
+## Scripts
+
+Reusable scripts in `scripts/`:
+
+### `scripts/ping-indexing.mjs` — Google Indexing API
+
+Programmatically notify Google to re-crawl pages. Reads `sitemap.xml` or scans for `.html` files.
+
+```bash
+# Ping all pages in a directory
+node scripts/ping-indexing.mjs --dir ~/workspaces/my-site/marketing --base-url https://www.example.com
+
+# Ping a single URL
+node scripts/ping-indexing.mjs --url https://www.example.com/new-page.html
+```
+
+**Prerequisites:**
+1. Enable "Web Search Indexing API" in GCP Console
+2. Place `google-service-account.json` in the project root
+3. Add the service account email as Owner in Google Search Console
+4. `npm install google-auth-library` in the target project
+
+The script auto-discovers the service account by searching upward from `--dir`. Rate limited to ~1 req/sec (~200/day).
+
 ## State Tracking
 
 Distribution state is tracked in `state/` (gitignored):
 - `state/submissions.json` — launch platform and directory submission status
 - `state/social-posts.json` — social media posts history
 - `state/seo-audit.json` — latest SEO audit results
+- `state/search-console.json` — URL indexing submission tracking
+- `state/seo-analysis.json` — GSC performance analysis data
 
 ## Stride CLI Reference
 
