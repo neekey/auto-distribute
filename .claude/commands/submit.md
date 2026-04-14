@@ -21,9 +21,14 @@ If user specified a platform or category, use that. If user said "next", pick th
 
 Select platforms from `PLATFORMS.md` (read in Step 1). Use the product type, audience, and category from `PRODUCT.md` to filter relevant platforms. Cross-reference with `state/submissions.json` to skip already-submitted ones.
 
+**Important — filter by audience type:**
+- Check if the product is **B2B** or **B2C** from `PRODUCT.md` target audience.
+- **B2B-only platforms** (skip for B2C products): G2, Capterra, GetApp, Software Advice, Clutch, TrustRadius, Crozdesk, GoodFirms. These explicitly reject B2C/consumer products.
+- **Paid-only platforms** (skip unless user opts in): SourceForge business directory (free tier is open-source project hosting only), Microlaunch, TAAFT ($347), Toolify ($99).
+
 When presenting platforms to the user, distinguish between:
 - **Launch platforms** (timing matters — plan ahead): Product Hunt, Hacker News, Peerlist, Uneed, etc.
-- **Directories** (submit anytime — ongoing SEO/discovery): G2, SourceForge, AlternativeTo, etc.
+- **Directories** (submit anytime — ongoing SEO/discovery): AlternativeTo, SaaSHub, Wellfound, etc.
 
 Also search for niche platforms not yet in `PLATFORMS.md`:
 ```bash
@@ -42,8 +47,8 @@ Score selected platforms by:
 - **Effort** — free submission vs requires review/payment
 - **Timing** — launch platforms need scheduling; directories can be done anytime
 
-Present a prioritized list grouped into:
-1. **Must-do (free, high DR, dofollow)**: SourceForge, G2, Capterra, Wellfound, F6S, StackShare
+Present a prioritized list grouped into (after filtering out ineligible platforms per audience type):
+1. **Must-do (free, high DR, dofollow)**: Wellfound, F6S, StartupFA.me, Fazier (+ SourceForge/G2/Capterra/StackShare if B2B/open-source)
 2. **High value (free, DR 70+)**: SaaSHub, AlternativeTo, BetaList, Alternative.me, etc.
 3. **Launch platforms** (schedule these): Product Hunt, Hacker News, Peerlist, Uneed, etc.
 4. **Category-specific** (AI, dev, niche): based on product type
@@ -110,7 +115,7 @@ For each platform:
 
 For maximum impact, stagger across weeks:
 
-1. **Week 1**: Directories (G2, Capterra, SourceForge, Wellfound, F6S, Crunchbase, AlternativeTo, SaaSHub) + BetaList (queue early)
+1. **Week 1**: Directories (Wellfound, F6S, StartupFA.me, Fazier, Crunchbase, AlternativeTo, SaaSHub; + G2/Capterra/SourceForge if B2B) + BetaList (queue early)
 2. **Week 2**: Product Hunt launch (plan 2-3 weeks ahead) + more directories
 3. **Week 2-3**: Hacker News Show HN (different day than PH)
 4. **Week 3**: dev.to article, Indie Hackers, Peerlist Launchpad
@@ -123,5 +128,5 @@ For maximum impact, stagger across weeks:
 - Target 20-40% nofollow for a natural backlink profile
 - Even nofollow from DR 90+ (Crunchbase, Trustpilot, PH, HN) carry indirect SEO value
 - Expected result: DR 0 → DR 25-35 within 2-3 months with 40-60+ quality submissions
-- Prioritize dofollow from DR 80+ first (SourceForge, G2, Capterra, Wellfound, F6S, StackShare)
+- Prioritize dofollow from DR 80+ first (Wellfound, F6S, StartupFA.me; + SourceForge/G2/Capterra/StackShare if B2B/open-source)
 - GitHub links (DR 97) are nofollow but provide massive discovery value

@@ -79,7 +79,7 @@ Last updated: 2026-04-12
 - **URL:** https://betalist.com
 - **What it is:** Platform for discovering and getting early access to upcoming startups. Accepts pre-launch and recently launched.
 - **Reach:** DR 75. ~11K monthly organic. 15-20% conversion rates. Typical: 200-500 visitors, 30-100 signups per launch.
-- **Cost:** Free (2-4 month queue) or $129 expedited (reviewed in days).
+- **Cost:** **Effectively paid.** FAQ mentions a free queue option, but the submission flow requires selecting a paid package. $129+ for expedited review.
 - **Criteria:** Recently launched or unreleased. Each startup gets two featuring opportunities: pre-launch and launch.
 - **Best for:** Pre-launch and early-stage startups seeking early adopters and beta testers.
 - **Backlinks:** Dofollow
@@ -301,8 +301,9 @@ Last updated: 2026-04-12
 - **What it is:** World's largest B2B software review marketplace. 5.5M+ buyers.
 - **DR:** 91 | **Traffic:** ~789K/mo | **Link:** Dofollow
 - **Cost:** Free basic listing. Paid for enhanced profiles, badges, lead generation.
-- **Criteria:** Real software product. Reviews from verified users needed for badges/ranking.
+- **Criteria:** Real software product. Reviews from verified users needed for badges/ranking. **B2B only — B2C products are explicitly not eligible.**
 - **Best for:** B2B SaaS, enterprise software.
+- **Audience:** B2B only. Consumer/B2C products will be rejected on submission.
 - **Notes:** Acquired Capterra/GetApp/Software Advice in Feb 2026. First 10 reviews are hardest but compound.
 
 #### Capterra (G2-owned)
@@ -311,6 +312,7 @@ Last updated: 2026-04-12
 - **DR:** 91 | **Traffic:** ~431K/mo | **Link:** Dofollow
 - **Cost:** Free listing. Paid PPC for featured placement.
 - **Best for:** Mid-market B2B buyers, SaaS.
+- **Audience:** B2B only (same restriction as G2). B2C products not eligible.
 
 #### GetApp (G2-owned)
 - **URL:** https://www.getapp.com
@@ -318,6 +320,7 @@ Last updated: 2026-04-12
 - **DA:** 88 | **Link:** Dofollow
 - **Cost:** Free listing.
 - **Best for:** SaaS, business software, productivity tools.
+- **Audience:** B2B only (same restriction as G2). B2C products not eligible.
 
 #### Software Advice (G2-owned)
 - **URL:** https://www.softwareadvice.com
@@ -325,14 +328,16 @@ Last updated: 2026-04-12
 - **DA:** 88 | **Link:** Dofollow
 - **Cost:** Free listing.
 - **Best for:** Enterprise and mid-market software.
+- **Audience:** B2B only (same restriction as G2). B2C products not eligible.
 
 #### SourceForge
 - **URL:** https://sourceforge.net
 - **What it is:** Historic software repository and review platform. 2.1M registered users, 30M page views/year.
 - **DR:** 92 | **Traffic:** ~1.7M/mo | **Link:** Dofollow
-- **Cost:** Free
+- **Cost:** Free for open-source project hosting. **Business software directory is paid only** (all tiers require a paid plan).
 - **Best for:** Open source, dev tools, desktop software.
-- **Notes:** One of the highest DR directories available for free.
+- **Audience:** B2B and open-source. Not suitable for B2C consumer apps.
+- **Notes:** The free DR 92 backlink only applies to open-source projects hosted on SourceForge. The business software comparison directory (sourceforge.net/software/) requires paid enrollment.
 
 #### Trustpilot
 - **URL:** https://www.trustpilot.com
@@ -356,6 +361,7 @@ Last updated: 2026-04-12
 - **DA:** 85 | **Traffic:** 1.08M/mo | **Link:** Dofollow
 - **Cost:** Free company profile. Paid recruiting.
 - **Best for:** Startups, especially pre-seed to Series A.
+- **Notes:** Primarily a hiring/jobs platform. Company profiles provide a high-DA dofollow backlink, but the platform won't drive product discovery traffic. Worth creating for SEO value, but don't expect users from it.
 
 #### F6S
 - **URL:** https://www.f6s.com
@@ -390,6 +396,7 @@ Last updated: 2026-04-12
 - **What it is:** Crowdsourced software recommendation engine. Find alternatives to popular software.
 - **DR:** 79 (DA 82) | **Traffic:** ~149K/mo | **Link:** Nofollow
 - **Cost:** Free
+- **Criteria:** Account must be at least **7 days old** before submitting a new app. Register early.
 - **Best for:** Any product positioned as an alternative to established software. Captures "[product] alternative" queries.
 
 #### SaaSHub
@@ -471,7 +478,7 @@ Last updated: 2026-04-12
 | **Crunchbase** | crunchbase.com | 91 | Nofollow | Free/Paid | Essential for investor visibility |
 | **Wellfound** | wellfound.com | 85 | Dofollow | Free | Pre-seed to Series A |
 | **F6S** | f6s.com | 83 | Dofollow | Free | Accelerators, funding |
-| **StartupFA.me** | startupfa.me | 83 | Dofollow | Free | — |
+| **StartupFA.me** | startupfa.me | 83 | Nofollow (free) / Dofollow (paid) | Free | Dofollow requires paid verification |
 | **Fazier** | fazier.com | 81 | Dofollow | Free | Startup launches |
 | **Indie Hackers** | indiehackers.com | 80 | Nofollow | Free | Bootstrapped founders |
 | **Peerlist** | peerlist.io | 76 | Nofollow | Free | Professional network |
@@ -535,13 +542,16 @@ Last updated: 2026-04-12
 ## Strategic Recommendations
 
 ### Highest Free SEO Value (Dofollow, DR 80+)
-1. SourceForge (DR 92)
-2. G2 (DR 91)
-3. Capterra (DR 91)
-4. Wellfound (DA 85)
-5. F6S (DR 83)
-6. StackShare (DR 80)
-7. Clutch (DR 80+)
+1. SourceForge (DR 92) — **open-source projects only**; business directory is paid
+2. G2 (DR 91) — **B2B only**; B2C products rejected
+3. Capterra (DR 91) — **B2B only** (G2-owned)
+4. Wellfound (DA 85) — accepts B2C startups
+5. F6S (DR 83) — accepts all startups
+6. StartupFA.me (DR 83) — accepts all startups
+7. StackShare (DR 80) — dev tools / tech stacks
+8. Clutch (DR 80+) — B2B services focus
+
+**For B2C products**, the effective top free dofollow list starts at Wellfound (DR 85).
 
 ### Highest Traffic Platforms
 1. dev.to (15M/mo)
