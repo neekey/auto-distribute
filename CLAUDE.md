@@ -100,11 +100,13 @@ node scripts/ping-indexing.mjs --url https://www.example.com/new-page.html
 
 **Prerequisites:**
 1. Enable "Web Search Indexing API" in GCP Console
-2. Place `google-service-account.json` in the project root
+2. Place `google-service-account.json` in the project root (service accounts can be reused across GSC properties — just add the email as Owner on each)
 3. Add the service account email as Owner in Google Search Console
-4. `npm install google-auth-library` in the target project
+4. `google-auth-library` must resolve from the script's location. Installed here in `auto-distribute/package.json` — run `npm install` in auto-distribute if `node_modules/` is missing.
 
-The script auto-discovers the service account by searching upward from `--dir`. Rate limited to ~1 req/sec (~200/day).
+The script auto-discovers the service account by searching upward from `--dir`. Rate limited to ~1 req/sec (~200/day per GCP project).
+
+**Integrating with a project's deploy:** For projects behind a CDN (CloudFront, Cloudflare, etc.), run the ping **after** cache invalidation — otherwise Google fetches the stale cached HTML and re-indexes the old content. Typical deploy sequence for S3+CloudFront sites: `aws s3 sync` → `aws cloudfront create-invalidation` → `node ping-indexing.mjs`. The project's Makefile or deploy script can chain these together (see `~/workspaces/english-name-app/makefile` for a reference implementation).
 
 ## State Tracking
 

@@ -12,3 +12,7 @@ state/
 
 # Product assets (screenshots, logos, OG images)
 assets/
+
+# Node
+node_modules/
+package-lock.json

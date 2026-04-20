@@ -1,0 +1,13 @@
+{
+  "name": "auto-distribute",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Claude Code command system for automating product distribution — launch platforms, directories, social, SEO.",
+  "type": "module",
+  "scripts": {
+    "ping-indexing": "node scripts/ping-indexing.mjs"
+  },
+  "dependencies": {
+    "google-auth-library": "^9.0.0"
+  }
+}
