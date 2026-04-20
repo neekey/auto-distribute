@@ -55,6 +55,23 @@ Generate `PRODUCT.md` from their answers.
    - Competitors being mentioned
    - Gaps in existing solutions people complain about
 
+## Step 2.5: Language / Locale Consideration
+
+Before generating the plan, decide whether this product warrants a multi-locale strategy. Apply this heuristic:
+
+- **Locale-specific value** — the product's core utility only makes sense in one language (e.g. Zahlhaus teaches listening to *German* numbers; an English/Spanish version would be a different product). → Recommend a **separate domain per locale**, each with its own keywords, distribution channels, and potentially a different name. Treat as sibling products, not translations.
+- **Language-agnostic utility with translatable chrome** — the core logic is universal, only UI copy needs translating (e.g. a unit converter, a markdown formatter, Numblr's number-to-words). → Recommend **one domain with `/en/`, `/de/`, `/es/` subdirectories** and `hreflang` tags. Distribution channels can overlap; SEO keywords need per-locale research.
+- **English-only makes sense** — audience is global tech / developer / B2B where English dominates, or the cost of translation exceeds the incremental audience. → Skip i18n.
+
+Ask the user (or infer from the product):
+- Who are the ideal users by region? (If they're concentrated in non-English markets, that's a signal.)
+- Is the value proposition tied to a specific language's structure, grammar, or cultural context?
+- Are there existing competitors serving non-English markets poorly?
+
+Capture the decision in DISTRIBUTION.md under "Locale Strategy" (see template below). If multi-locale is recommended, also note: per-locale `llms.txt`, `hreflang` tags, separate Search Console properties, and localized OG images.
+
+Related existing products in this toolkit for reference: **Numblr** (english-only number-to-words, could expand) and **Zahlhaus** (German listening trainer, sibling to Numblr — not a translation).
+
 ## Step 3: Generate Copy & Distribution Plan
 
 Using the landing page content, social research, and PRODUCT.md, **auto-generate all submission copy**. Do not leave placeholders — write real, usable copy based on what was extracted. The user can refine later.
@@ -65,6 +82,13 @@ Generate `DISTRIBUTION.md` with a prioritized plan:
 # Distribution Plan: {product name}
 
 **Generated**: {date}
+
+## Locale Strategy
+
+- **Approach**: {one-domain-translated | sibling-domains-per-locale | english-only}
+- **Reasoning**: {why — locale-specific value vs translatable vs global tech audience}
+- **Locales in scope**: {e.g. en, de, es — or "en only"}
+- **Action items** (if multi-locale): hreflang tags, per-locale llms.txt, separate GSC properties, localized OG images, separate keyword research per locale.
 
 ## Priority 1: Launch Platforms & Directories (Week 1)
 

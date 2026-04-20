@@ -23,9 +23,10 @@ Auto-distribute is a set of Claude Code commands (`.claude/commands/`) that orch
 | `/distribute` | Main entry point — analyze product and create distribution strategy |
 | `/submit` | Submit to launch platforms and directories (replaces `/launch` + `/directories`) |
 | `/social` | Post and engage on X and Reddit via Stride CLI |
-| `/seo-audit` | Audit landing page SEO (meta tags, OG, sitemap, speed) |
+| `/seo-audit` | Audit landing page SEO (meta tags, OG, sitemap, speed) + agent-readiness scan via isitagentready.com |
 | `/seo-content` | Research keywords and generate SEO pages/blog content |
 | `/seo-analyze` | Analyze Search Console data, measure content performance, recommend updates |
+| `/ga-audit` | Audit GA4 behavior data — landing pages, traffic mix, AI referrers (ChatGPT / Perplexity / Claude) |
 | `/search-console` | Google Search Console: submit URLs, check indexing |
 | `/sync-template` | Pull latest commands/docs from the auto-distribute template repo |
 
@@ -82,6 +83,12 @@ Media assets are stored in `assets/` (gitignored):
 - `assets/screenshot-*.png` — product screenshots (user-provided)
 - `assets/demo.gif` / `assets/demo.mp4` — demo video (user-provided)
 
+## Reference Docs
+
+- `PROJECTS.md` — roster of products currently being distributed (paths, URLs, status)
+- `PLATFORMS.md` — launch platforms and directories submitted to
+- `AGENT-READINESS.md` — how to make sites discoverable/usable by AI agents (llms.txt, markdown negotiation, content signals, MCP server cards). `/seo-audit` scores against this via [isitagentready.com](https://isitagentready.com).
+
 ## Scripts
 
 Reusable scripts in `scripts/`:
@@ -107,6 +114,19 @@ node scripts/ping-indexing.mjs --url https://www.example.com/new-page.html
 The script auto-discovers the service account by searching upward from `--dir`. Rate limited to ~1 req/sec (~200/day per GCP project).
 
 **Integrating with a project's deploy:** For projects behind a CDN (CloudFront, Cloudflare, etc.), run the ping **after** cache invalidation — otherwise Google fetches the stale cached HTML and re-indexes the old content. Typical deploy sequence for S3+CloudFront sites: `aws s3 sync` → `aws cloudfront create-invalidation` → `node ping-indexing.mjs`. The project's Makefile or deploy script can chain these together (see `~/workspaces/english-name-app/makefile` for a reference implementation).
+
+### `scripts/ga-report.mjs` — GA4 Data API
+
+Pulls five reports from GA4 (summary, landing pages, source/medium, AI referrers, conversions) and writes `state/ga-report.json`. Used by `/ga-audit`.
+
+```bash
+node scripts/ga-report.mjs --property 123456789 --days 28 --project ~/workspaces/my-site
+```
+
+**Prerequisites:**
+1. Enable "Google Analytics Data API" in GCP Console (reuses same service account as Indexing API / GSC)
+2. In GA4 Admin → Property Access Management, add the service account email as a Viewer
+3. The GA4 property ID goes in the project's `PRODUCT.md` as `GA4 Property ID: 123456789`
 
 ## State Tracking
 

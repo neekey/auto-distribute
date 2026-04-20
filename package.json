@@ -5,7 +5,8 @@
   "description": "Claude Code command system for automating product distribution — launch platforms, directories, social, SEO.",
   "type": "module",
   "scripts": {
-    "ping-indexing": "node scripts/ping-indexing.mjs"
+    "ping-indexing": "node scripts/ping-indexing.mjs",
+    "ga-report": "node scripts/ga-report.mjs"
   },
   "dependencies": {
     "google-auth-library": "^9.0.0"
