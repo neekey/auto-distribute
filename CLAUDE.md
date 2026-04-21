@@ -113,6 +113,10 @@ node scripts/ping-indexing.mjs --url https://www.example.com/new-page.html
 
 The script auto-discovers the service account by searching upward from `--dir`. Rate limited to ~1 req/sec (~200/day per GCP project).
 
+**Gotcha:** in `--url` mode the script walks up from `process.cwd()`, not the target project. Running from `auto-distribute/` without `--sa` (and without a service account in its tree) silently falls back to gcloud ADC and 403s. Either `cd` into the target project first, or pass `--sa <path>` explicitly. The script now prints which credential it's using at startup so this surfaces immediately.
+
+**403 ACCESS_TOKEN_SCOPE_INSUFFICIENT** after enabling the Indexing API is usually propagation lag — retry in a few minutes before debugging further. It can also appear if the service account's email isn't an Owner on the specific GSC property format (domain vs URL-prefix) that matches the URL being submitted.
+
 **Integrating with a project's deploy:** For projects behind a CDN (CloudFront, Cloudflare, etc.), run the ping **after** cache invalidation — otherwise Google fetches the stale cached HTML and re-indexes the old content. Typical deploy sequence for S3+CloudFront sites: `aws s3 sync` → `aws cloudfront create-invalidation` → `node ping-indexing.mjs`. The project's Makefile or deploy script can chain these together (see `~/workspaces/english-name-app/makefile` for a reference implementation).
 
 ### `scripts/ga-report.mjs` — GA4 Data API

@@ -138,6 +138,12 @@ async function pingUrls(urls, saPath) {
     process.env.GOOGLE_APPLICATION_CREDENTIALS = saPath;
   }
 
+  const credSource = saPath
+    ? `service account: ${saPath}`
+    : process.env.GOOGLE_APPLICATION_CREDENTIALS
+      ? `GOOGLE_APPLICATION_CREDENTIALS: ${process.env.GOOGLE_APPLICATION_CREDENTIALS}`
+      : 'application default credentials (gcloud) — likely to 403 unless ADC is an authorised GSC owner. Pass --sa <path> or run from a dir containing google-service-account.json.';
+  console.log(`Auth: ${credSource}`);
   console.log(`\nPinging ${urls.length} URL(s):\n`);
 
   const auth = new GoogleAuth({
