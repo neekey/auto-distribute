@@ -28,6 +28,7 @@ Auto-distribute is a set of Claude Code commands (`.claude/commands/`) that orch
 | `/seo-analyze` | Analyze Search Console data, measure content performance, recommend updates |
 | `/ga-audit` | Audit GA4 behavior data — landing pages, traffic mix, AI referrers (ChatGPT / Perplexity / Claude) |
 | `/search-console` | Google Search Console: submit URLs, check indexing |
+| `/remind` | Create a local macOS Reminders entry for recurring review tasks (e.g., weekly `/social engage`). Use when remote `/schedule` can't (stride CLI is local-only). |
 | `/sync-template` | Pull latest commands/docs from the auto-distribute template repo |
 
 ## Target Project
