@@ -10,5 +10,8 @@
   },
   "dependencies": {
     "google-auth-library": "^9.0.0"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.59.1"
   }
 }
