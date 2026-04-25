@@ -19,33 +19,43 @@ If no `--project`, use the current working directory.
 
 ## Step 2: Collect Search Console Data
 
-Ask the user to export data from Google Search Console, or guide them through the UI:
+### Option A: API (recommended — automated)
 
-### Option A: Manual Export (recommended)
-Guide the user to export CSV from Search Console:
+If `google-service-account.json` exists in the project root and the Search Console API is enabled in the associated GCP project, pull data directly:
+
+```bash
+# All reports (queries, pages, query-page combos, countries, devices, summary)
+# with comparison to the previous period
+node {auto-distribute-path}/scripts/gsc-report.mjs \
+  --site {site-url-from-PRODUCT.md} \
+  --days 90 --compare --project {project-path}
+```
+
+Site URL format: URL-prefix property uses trailing slash (`https://example.com/`); domain property uses `sc-domain:example.com`. Output goes to `state/gsc-report.json`.
+
+If the script returns a 403 with `SERVICE_DISABLED`, ask the user to enable the **Google Search Console API** at the URL printed in the error, wait ~1 minute, then retry.
+
+### Option B: Manual CSV Export (fallback)
+
+If the API isn't set up:
 1. Go to [Search Console Performance](https://search.google.com/search-console/performance)
 2. Set date range (last 3 months recommended)
-3. Export **Queries** tab (impressions, clicks, CTR, position for each keyword)
-4. Export **Pages** tab (impressions, clicks, CTR, position for each page)
-5. Save exports to `state/gsc-queries.csv` and `state/gsc-pages.csv`
+3. Export **Queries** tab and **Pages** tab
+4. Save to `state/gsc-queries.csv` and `state/gsc-pages.csv`
 
-### Option B: User Pastes Data
-Ask the user to paste the top queries and pages data directly if they prefer.
+### Option C: User Pastes Data
+Ask the user to paste the top queries and pages directly if they prefer.
 
-### Option C: API (if configured)
-If Search Console API is set up (check `state/search-console.json`):
+### Optional: Check Index Status of Underperformers
+
+If certain pages have unexpectedly low impressions, run URL Inspection to see whether they're actually indexed:
+
 ```bash
-# Fetch performance data via API
-curl -X POST "https://searchconsole.googleapis.com/webmasters/v3/sites/{site}/searchAnalytics/query" \
-  -H "Authorization: Bearer {token}" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "startDate": "{3 months ago}",
-    "endDate": "{today}",
-    "dimensions": ["query", "page"],
-    "rowLimit": 500
-  }'
+node {auto-distribute-path}/scripts/gsc-inspect.mjs \
+  --site {site-url} --from-submissions --project {project-path}
 ```
+
+Pages stuck in "Discovered - currently not indexed" or "Crawled - currently not indexed" won't show impressions regardless of content quality — flag those for the user as a separate issue.
 
 ## Step 3: Analyze Performance
 

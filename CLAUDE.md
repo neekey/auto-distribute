@@ -133,6 +133,53 @@ node scripts/ga-report.mjs --property 123456789 --days 28 --project ~/workspaces
 2. In GA4 Admin → Property Access Management, add the service account email as a Viewer
 3. The GA4 property ID goes in the project's `PRODUCT.md` as `GA4 Property ID: 123456789`
 
+### `scripts/gsc-report.mjs` — Search Console Search Analytics API
+
+Pulls performance data (queries, pages, query×page, countries, devices, summary) from Google Search Console and writes `state/gsc-report.json`. Replaces manual CSV exports for `/seo-analyze`.
+
+```bash
+# All reports for the last 90 days
+node scripts/gsc-report.mjs --site https://numblr.io/ --project ~/workspaces/numblr
+
+# Compare current period to previous period of same length
+node scripts/gsc-report.mjs --site https://numblr.io/ --days 28 --compare --project ~/workspaces/numblr
+
+# Just one report
+node scripts/gsc-report.mjs --site https://numblr.io/ --report query-page --limit 500
+```
+
+**Site URL format:** URL-prefix property → `https://example.com/` (trailing slash); domain property → `sc-domain:example.com`.
+
+**Prerequisites:**
+1. Enable **"Google Search Console API"** in GCP Console (separate from the Indexing API)
+2. Reuses the same `google-service-account.json` already used for Indexing — no extra GSC permission setup needed if it's already an Owner
+3. ~2-day reporting delay; the script automatically backs the end date off by 2 days to avoid partial-day rows
+
+**Caveats:**
+- API rows ≈ UI rows minus anonymized queries; totals may differ from CSV exports by a few %
+- Default 250-row limit per report; raise with `--limit` (max 25,000 per call)
+
+### `scripts/gsc-inspect.mjs` — Search Console URL Inspection API
+
+Diagnoses indexing state per URL: indexed yes/no, coverage state ("Submitted and indexed", "Discovered - currently not indexed", "Crawled - currently not indexed"), last crawl time, Google's chosen canonical vs. declared canonical. Use when pinged URLs aren't appearing in search.
+
+```bash
+# Single URL
+node scripts/gsc-inspect.mjs --site https://numblr.io/ --url https://numblr.io/blogs/foo
+
+# All URLs from a sitemap (URL or local file)
+node scripts/gsc-inspect.mjs --site https://numblr.io/ --sitemap https://numblr.io/sitemap --project ~/workspaces/numblr
+
+# Re-check everything we previously submitted via /search-console
+node scripts/gsc-inspect.mjs --site https://numblr.io/ --from-submissions --project ~/workspaces/numblr
+```
+
+**Prerequisites:** same GCP API enablement as `gsc-report.mjs` (one-time per project).
+
+**Quotas:** 2,000 inspections/day per property, 600/min. Script rate-limits to ~5/sec. Use `--max N` to cap large runs.
+
+**Output:** writes `state/gsc-index-status.json` with a `summary` bucket count and per-URL details.
+
 ## State Tracking
 
 Distribution state is tracked in `state/` (gitignored):
@@ -141,6 +188,8 @@ Distribution state is tracked in `state/` (gitignored):
 - `state/seo-audit.json` — latest SEO audit results
 - `state/search-console.json` — URL indexing submission tracking
 - `state/seo-analysis.json` — GSC performance analysis data
+- `state/gsc-report.json` — raw GSC Search Analytics output (queries, pages, etc.)
+- `state/gsc-index-status.json` — per-URL index status from URL Inspection API
 
 ## Stride CLI Reference
 

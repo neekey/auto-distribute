@@ -86,13 +86,40 @@ Recommend the user sets up the Indexing API for future use (see Step 3).
 
 ## Step 5: Status Check
 
-Guide user to check in Google Search Console:
+### Programmatic (preferred)
+
+Run the URL Inspection API via `gsc-inspect.mjs` to get the actual index state for each URL — much faster than checking one-by-one in the Search Console UI:
+
+```bash
+# Re-check every URL we've previously submitted
+node {auto-distribute-path}/scripts/gsc-inspect.mjs \
+  --site {site-url} --from-submissions --project {project-path}
+
+# Or check a sitemap (URL or local path)
+node {auto-distribute-path}/scripts/gsc-inspect.mjs \
+  --site {site-url} --sitemap {sitemap-url} --project {project-path}
+
+# Or a single URL
+node {auto-distribute-path}/scripts/gsc-inspect.mjs \
+  --site {site-url} --url {full-url}
+```
+
+Output goes to `state/gsc-index-status.json` with a summary bucket count. Read it and report:
+- **Submitted and indexed** — healthy
+- **Discovered - currently not indexed** — Google found the URL but hasn't crawled/indexed it. Common for new pages on low-authority sites; can take weeks.
+- **Crawled - currently not indexed** — Google crawled but chose not to index. Usually content quality, duplication, or canonical issues. Diagnose: thin content? duplicate of another page? wrong canonical?
+- **URL is unknown to Google** — never discovered; submit via Indexing API and ensure it's in sitemap + linked from indexed pages
+- **Excluded by 'noindex' tag** / **Blocked by robots.txt** — config issue, fix and resubmit
+
+If the API isn't set up (403 SERVICE_DISABLED), ask the user to enable the **Google Search Console API** in GCP Console and retry.
+
+### Manual fallback
+
+Guide user to check in Google Search Console UI:
 - **Coverage report** — how many pages are indexed vs excluded
 - **URL Inspection** — check specific URLs for indexing status
 - **Performance** — search queries driving impressions/clicks
 - **Sitemap status** — is the sitemap processed successfully?
-
-Report findings and suggest actions for any issues (e.g., pages stuck in "Discovered - currently not indexed").
 
 ## Step 6: Track
 
