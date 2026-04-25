@@ -28,6 +28,7 @@ Auto-distribute is a set of Claude Code commands (`.claude/commands/`) that orch
 | `/seo-analyze` | Analyze Search Console data, measure content performance, recommend updates |
 | `/ga-audit` | Audit GA4 behavior data — landing pages, traffic mix, AI referrers (ChatGPT / Perplexity / Claude) |
 | `/search-console` | Google Search Console: submit URLs, check indexing |
+| `/affiliate` | Set up an affiliate program — agreement, Tally application form, welcome email, optional Notion + Tally provisioning. See `AFFILIATE.md`. |
 | `/remind` | Create a local macOS Reminders entry for recurring review tasks (e.g., weekly `/social engage`). Use when remote `/schedule` can't (stride CLI is local-only). |
 | `/sync-template` | Pull latest commands/docs from the auto-distribute template repo |
 
@@ -89,6 +90,7 @@ Media assets are stored in `assets/` (gitignored):
 - `PROJECTS.md` — roster of products currently being distributed (paths, URLs, status)
 - `PLATFORMS.md` — launch platforms and directories submitted to
 - `AGENT-READINESS.md` — how to make sites discoverable/usable by AI agents (llms.txt, markdown negotiation, content signals, MCP server cards). `/seo-audit` scores against this via [isitagentready.com](https://isitagentready.com).
+- `AFFILIATE.md` — affiliate program setup: decision framework, commission economics, defensive package, Stripe + Tally setup, Tally API gotchas, outreach patterns. Consumed by `/affiliate`.
 
 ## Scripts
 
@@ -180,6 +182,26 @@ node scripts/gsc-inspect.mjs --site https://numblr.io/ --from-submissions --proj
 
 **Output:** writes `state/gsc-index-status.json` with a `summary` bucket count and per-URL details.
 
+### `scripts/build-affiliate-form.mjs` — Tally affiliate-application form builder
+
+Builds and POSTs (or PATCHes) a Tally affiliate-application form from a per-product JSON config. Used by `/affiliate`.
+
+```bash
+# Create a new form
+TALLY_API_KEY=tly-... node scripts/build-affiliate-form.mjs --config affiliate/tally-form-config.json
+
+# Update an existing form (replaces the entire blocks array — regenerate from config; do NOT echo back GET-response fields)
+TALLY_API_KEY=tly-... node scripts/build-affiliate-form.mjs --config affiliate/tally-form-config.json --patch <form-id>
+```
+
+Config schema and Tally API gotchas (post-2026-02 schema validation) are documented in `AFFILIATE.md` § "Tally application form setup".
+
+**Prerequisites:**
+1. Tally account; Settings → API → create API key
+2. `TALLY_API_KEY` env var set when running the script
+
+**What needs the Tally UI (no API):** email notifications, submission redirect, captcha, custom theme. Configure these manually after the form is created.
+
 ## State Tracking
 
 Distribution state is tracked in `state/` (gitignored):
@@ -190,6 +212,7 @@ Distribution state is tracked in `state/` (gitignored):
 - `state/seo-analysis.json` — GSC performance analysis data
 - `state/gsc-report.json` — raw GSC Search Analytics output (queries, pages, etc.)
 - `state/gsc-index-status.json` — per-URL index status from URL Inspection API
+- `state/affiliate-program.json` — affiliate program metadata, creator roster, monthly payouts
 
 ## Stride CLI Reference
 
