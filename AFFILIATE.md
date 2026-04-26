@@ -124,6 +124,53 @@ For the first 5–10 creators, **don't pay for Rewardful, Tolt, or FirstPromoter
    - Enable "Allow promotion codes" on Checkout sessions
    - Or for Payment Links, toggle "Customers can use promotion codes" per link
 
+### One coupon, N promotion codes
+
+For each program (founding cohort, beta-tester comp, etc.) create **one shared coupon** with the discount terms (`percent_off`, `applies_to`, `redeem_by`) and create **N promotion codes** under it (one per creator). Don't make a coupon per creator.
+
+| Aspect | One coupon + N codes | N coupons |
+|---|---|---|
+| Dashboard clutter | 1 coupon, N codes nested | N coupons + N codes |
+| "How many program redemptions?" | one count on the coupon | sum across N coupons |
+| Per-creator expiry | yes (`promotion_code.expires_at`) | yes |
+| Per-creator single-use | yes (`promotion_code.max_redemptions`) | yes |
+| Total program cap | yes (`coupon.max_redemptions`) | no |
+| Change offer terms once | yes (edit coupon → applies to all) | edit N coupons |
+
+**Caveat:** `promotion_code.expires_at` cannot exceed `coupon.redeem_by`. Set the coupon's `redeem_by` long-horizon (e.g. 1 year out) and use per-code `expires_at` for individual deadlines.
+
+### Naming conventions
+
+Two patterns for two different audiences. Don't conflate them.
+
+**Internal-use codes** (comp / beta / employee — verbose, namespaced):
+
+- Pattern: `<PROGRAM>-<YEAR>-<TIER>-<CREATOR>`
+- Examples: `FOUNDING-2026-LIFETIME-ATIA`, `BETA-2026-MONTHLY-XYZ`, `FOUNDING-2027-LIFETIME-ABC`
+- Rationale: groups cleanly in Stripe dashboard (alphabetical sort), self-documenting (no metadata lookup), future-proof for new years, tiers, programs
+- Length doesn't matter — these are typed once, by someone you briefed, in a controlled flow
+
+**Audience-facing codes** (affiliate / public discount — short, industry-style):
+
+- Pattern: `<HANDLE><DISCOUNT_PCT>` (e.g. `ATIA20`, `BIANCA20`, `LAUNCH50`)
+- Rationale: typed by audiences at checkout, often on mobile; industry convention aids recall and conversion
+- Long namespaced codes hurt conversion ("use code AFFILIATE-2026-ATIA20" reads corporate)
+
+**Where the scalability lives:** in **Stripe metadata**, not the code itself. When creating a promotion code, set program/year/cohort/discount_pct as metadata fields. That gives full dashboard filterability without burdening the public-facing code.
+
+**Edge cases:**
+- Brand-only creators (no first name surfaced): use the handle in uppercase, normalized
+- Two creators share a first name: append a disambiguator or use the candidate slug from state JSON
+- Re-issued codes for the same creator: append `-V2`, `-V3`
+
+### Stripe API gotchas
+
+- **`Stripe-Version` header may be required.** Some accounts have a default API version where `coupon` is rejected as unknown on `/v1/promotion_codes`. Send `Stripe-Version: 2025-04-30.basil` (or current basil version) explicitly when creating promotion codes via API. If unsure, send it always — it never hurts.
+- **`applies_to` is omitted from the default coupon response.** When you create or retrieve a coupon, `applies_to` shows as `null` in the standard JSON output even when set. To verify, retrieve with `?expand[]=applies_to`.
+- **Coupon `name` is limited to 40 characters.** Use a short admin-facing name; don't conflate with the public code.
+- **`applies_to.products` takes Product IDs, not Price IDs.** If you only have a Price ID, retrieve the price first (`GET /v1/prices/<id>`) to get the product ID.
+- **Coupon `applies_to` is immutable after creation.** Set it correctly at creation; if wrong, delete and recreate (coupons are deletable, unlike most Stripe objects).
+
 ### Tracking
 
 Stripe → Coupons → click the coupon → see all sessions/payments that used it. Filter or export monthly to a Google Sheet:
@@ -240,6 +287,124 @@ Creators in regulated jurisdictions must disclose affiliate relationships. Stand
 
 Don't enforce a specific format. Just require honesty in the agreement.
 
+### Subject line discipline
+
+When the channel shows a subject line (email, LinkedIn message), use plain descriptor language. Pattern: `[product-descriptor] for [audience]`. Example: `German number listening practice tool for your podcast listeners`.
+
+**Avoid:**
+- `Quick note about X` / `Quick note re: X` — casual, throat-clearing
+- `Big fan of X, building [something]` — flattery, pretentious
+- `Re:` when not actually replying — feels deceptive
+- `Free X for Y` — risks spam filtering and reads transactional
+
+The body does the personalization; the subject just tells them what the email is about.
+
+### Side-project disclosure on profile-visible channels
+
+When outreach goes via LinkedIn (or any channel where the recipient sees your full professional profile in one tap), include a brief side-project clause: "[Product] is a side project I've been building outside my day job." One sentence, confident, no apology. Indie/teacher/creator communities are warm to peer-builders, and getting ahead of the day-job/project mismatch is warmer than letting them wonder.
+
+Skip on platform-only DMs (italki, Substack, Patreon, Instagram) where the day-job profile isn't visible.
+
+## Response handling
+
+When a creator replies positively to outreach (asks for the account, says yes), follow these steps. Total: 5-10 min per creator.
+
+### Step 1 — Log the reply
+
+Update the candidate's record in `state/affiliate-outreach.json`:
+- `status` → `replied`
+- Append to `outreach` array: `{date, channel, action: "received", language, content, tone}`
+
+### Step 2 — Create their promotion code
+
+Reuse the shared program coupon. Create a new promotion code attached to it (`max_redemptions=1`, `expires_at` = ~30 days out, code matches the internal naming convention above).
+
+```bash
+KEY=<your stripe live secret key>
+SV="Stripe-Version: 2025-04-30.basil"
+COUPON_ID="<shared coupon id>"
+NAME_UPPER="BIANCA"           # uppercase, no spaces
+CREATOR_ID="bianca-italki"    # matches state JSON id field
+CODE="FOUNDING-2026-LIFETIME-${NAME_UPPER}"
+EXPIRES_AT=$(date -v +30d -v 23H -v 59M -v 59S +%s)
+
+curl -s -X POST https://api.stripe.com/v1/promotion_codes -u "$KEY:" -H "$SV" \
+  -d "coupon=$COUPON_ID" \
+  -d "code=$CODE" \
+  -d max_redemptions=1 \
+  -d expires_at=$EXPIRES_AT \
+  -d "metadata[creator_id]=$CREATOR_ID" \
+  -d "metadata[program]=founding-cohort-2026"
+```
+
+Capture the returned `id` (`promo_xxx`) and `expires_at` for step 3.
+
+### Step 3 — Update state JSON
+
+Add to the candidate record:
+
+```json
+"stripe": {
+  "personal_comp_code": "FOUNDING-2026-LIFETIME-<NAME>",
+  "personal_comp_promo_id": "<promo_xxx from step 2>",
+  "personal_comp_expires_at": "<ISO date with timezone>",
+  "personal_comp_coupon_id": "<shared coupon id>",
+  "audience_affiliate_code": null
+}
+```
+
+### Step 4 — Draft the comp-delivery message
+
+Match the language the creator replied in. Keep plain text (no markdown blockquotes — `>` characters get copy-pasted literally). Wrap the body in `--- copy from below/above this line ---` markers in the draft file.
+
+#### English template
+
+Replace `<NAME>` (their first name), `<NAME-UPPER>` (uppercase for the code), `<TIER>`, `<CODE>`, `<EXPIRY-DATE>`, and the product-specific redemption flow.
+
+```
+--- copy from below this line ---
+
+Hi <NAME>,
+
+Glad to hear it! Here's the code for your <TIER> account:
+
+<CODE>
+
+How to redeem:
+1. <product-specific signup/login step>
+2. <product-specific pricing/checkout step>
+3. Apply the code at checkout
+
+The code is single-use, only for the <TIER> tier, and expires on <EXPIRY-DATE>. If anything hitches, just give me a quick heads-up.
+
+No rush trying it out, curious what you think once you've had time to take a look.
+
+Best regards,
+<your name>
+
+--- copy from above this line ---
+```
+
+For other languages: translate the structure but match the creator's register (formal vs informal, regional turn of phrase). Keep the redemption steps as numbered list — universally easy to follow.
+
+### Step 5 — Send and log
+
+After copy-pasting and sending on the same channel they replied on, append to `outreach`: `{date, channel, action: "sent", variant: "comp-code-delivery"}`. Status stays `replied` (the comp code being sent doesn't change the funnel stage; only redemption does).
+
+### Step 6 — When they confirm they tried it
+
+Separate trigger:
+- Set `status: applied` and fill `applied_date`
+- Send the full affiliate pitch (Notion agreement + Tally form links)
+- When they apply via Tally and you approve, set `status: active` and create their audience-facing affiliate code (short industry-style — see naming conventions above)
+
+### Variations
+
+- **Different language reply:** match it. Translate the template.
+- **Reply asks questions instead of yes:** answer the questions first, hold the comp code until they explicitly ask for the account.
+- **"Not interested" reply:** set `status: declined`, log the reply, archive. No comp code created.
+- **Different tier requested:** create a separate shared coupon for that tier (or restrict the offer to the original tier and explain).
+
 ## State tracking
 
 Use `state/affiliate-program.json` (per-product) for the creator roster:
@@ -252,14 +417,35 @@ Use `state/affiliate-program.json` (per-product) for the creator roster:
   "tally_form_id": "abc123",
   "tally_form_url": "https://tally.so/r/abc123",
   "agreement_url": "https://notion.so/...",
+  "status_flow": ["researched", "drafted", "sent", "replied", "applied", "approved", "active", "declined", "no-response"],
+  "follow_up_cadence_days": [0, 7, 21, 30],
+  "shared_stripe_artifacts": {
+    "founding_cohort_2026_lifetime_coupon_id": "coupon_xyz",
+    "founding_cohort_2026_lifetime_coupon_name": "Founding creator free lifetime",
+    "founding_cohort_2026_lifetime_coupon_redeem_by": "2027-04-26T23:59:59Z",
+    "stripe_api_version": "2025-04-30.basil",
+    "_note": "Reuse this coupon for new founding-cohort comp codes. Create a new promotion_code (max_redemptions=1, expires_at=30d) per creator, attached to this coupon."
+  },
   "creators": [
     {
       "name": "Anja Müller",
       "email": "anja@example.com",
       "channel": "https://youtube.com/@anja",
       "country": "DE",
-      "stripe_promotion_code": "ANJA",
-      "stripe_coupon_id": "coupon_xyz",
+      "status": "active",
+      "outreach": [
+        {"date": "2026-04-22", "channel": "linkedin", "action": "sent", "variant": "message-1-long"},
+        {"date": "2026-04-23", "channel": "linkedin", "action": "received", "language": "de", "content": "...", "tone": "positive"},
+        {"date": "2026-04-23", "channel": "linkedin", "action": "sent", "variant": "comp-code-delivery"}
+      ],
+      "stripe": {
+        "personal_comp_code": "FOUNDING-2026-LIFETIME-ANJA",
+        "personal_comp_promo_id": "promo_xxx",
+        "personal_comp_expires_at": "2026-05-23T23:59:59Z",
+        "personal_comp_coupon_id": "coupon_xyz",
+        "audience_affiliate_code": "ANJA20",
+        "audience_affiliate_promo_id": "promo_yyy"
+      },
       "applied_date": "2026-04-25",
       "approved_date": "2026-04-26",
       "code_activated_date": "2026-04-26",
@@ -273,12 +459,16 @@ Use `state/affiliate-program.json` (per-product) for the creator roster:
       "month": "2026-04",
       "payout_date": "2026-06-01",
       "creator_payouts": [
-        { "code": "ANJA", "sales": 12, "net_revenue": 348.00, "commission": 174.00, "wise_txn": "TX12345" }
+        { "code": "ANJA20", "sales": 12, "net_revenue": 348.00, "commission": 174.00, "wise_txn": "TX12345" }
       ]
     }
   ]
 }
 ```
+
+The schema is one file across the whole funnel — `status` moves from `researched` (early discovery) through `sent` (outreach), `replied` (positive response), `applied` (Tally form submitted), `approved` (you said yes), to `active` (audience code live and earning). The `outreach` array is append-only and tracks every send/receive on every channel.
+
+The `personal_comp_code` (internal namespaced) is separate from the `audience_affiliate_code` (short industry-style). Don't conflate them. See **Naming conventions** above.
 
 This file is gitignored (under `state/`) since it contains creator PII and payout amounts.
 
