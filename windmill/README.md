@@ -1,163 +1,90 @@
 # Windmill workflows
 
-Automated workflows for the auto-distribute system, run on a local Windmill instance (`~/workspaces/windmill`, Docker compose).
+Automated workflows for the auto-distribute system, running on the local Windmill instance (`~/workspaces/windmill`, Docker compose).
 
 ## Reddit discovery → Notion
 
-Daily script that searches Reddit for product-relevant threads and writes the top candidates as new rows to a Notion database, ready for manual review and reply via `/social reply <url>`.
+Daily flow that searches Reddit for product-relevant threads and writes the top candidates as new rows to a Notion database for manual review (and reply via `/social reply <url>`).
 
-**File:** `reddit-discovery.ts`
+### Architecture (Windmill flow with two step scripts)
+
+```
+flow: f/distribution/reddit_discovery_flow
+  ├── step a: f/distribution/reddit_search_score
+  │     (Reddit public JSON API → heuristic filter → score)
+  └── step b: f/distribution/notion_write_candidates
+        (dedupe vs Notion DB → write top N as Status=New)
+```
+
+Sources of truth in this repo:
+- `windmill/scripts/reddit-search-score.ts` — step 1
+- `windmill/scripts/notion-write-candidates.ts` — step 2
+- `windmill/flows/reddit-discovery-flow.json` — flow definition
+
+These are pushed to Windmill via API. To re-sync after editing, POST to `/api/w/<ws>/scripts/create` (with the previous hash as `parent_hash`) or `/flows/update/<path>`.
 
 ### Notion DBs (already created)
 
-| Product | Database URL | Database ID (use this in `notionDatabaseId`) |
-|---------|-------------|---------------------------------------------|
+| Product | Database URL | Database ID |
+|---------|-------------|-------------|
 | Numblr | https://www.notion.so/df2c80d3ac7e4c3a9e0bada5c67fd48a | `df2c80d3-ac7e-4c3a-9e0b-ada5c67fd48a` |
 | Zahlhaus | https://www.notion.so/34a4f2ba6e96411cac3474f0f2eea758 | `34a4f2ba-6e96-411c-ac34-74f0f2eea758` |
 
-### One-time setup
+The Notion integration ("Local Windmill") is connected at the parent project page level, which propagates access to the Reddit Discovery sub-databases.
 
-1. **Notion integration**
-   1. Go to https://www.notion.so/my-integrations → New integration
-   2. Name it (e.g. "Auto Distribute"), workspace = your personal workspace
-   3. Copy the **Internal Integration Secret** (`secret_...`) — this is your `NOTION_TOKEN`
-   4. Open the **Numblr.io** project page in Notion → top-right `...` → Connections → Add connection → pick the integration. Repeat for the **zahlhaus** page. (Connecting at the project page level grants access to the Reddit Discovery sub-database underneath.)
+### Schedules (already live)
 
-2. **Windmill — Notion token**
-   1. In Windmill UI → Variables → New variable
-   2. Path: `f/distribution/notion_token`
-   3. Value: the `secret_...` token from step 1
-   4. Mark as secret
+| Schedule path | Cron | Timezone | Args |
+|--------------|------|----------|------|
+| `f/distribution/reddit_discovery_numblr` | `0 0 9 * * *` | Australia/Melbourne | Numblr config |
+| `f/distribution/reddit_discovery_zahlhaus` | `0 0 9 * * *` | Australia/Melbourne | Zahlhaus config |
 
-3. **Windmill — script**
-   1. Scripts → New script → TypeScript (Deno)
-   2. Path: `f/distribution/reddit_discovery`
-   3. Paste the contents of `reddit-discovery.ts`
-   4. Save and run a test (use one of the schedule args below as the input)
+Both point at `f/distribution/reddit_discovery_flow` with `is_flow: true`. Args include `notion: "$res:u/ni184775761/notion"` to wire the Notion resource at runtime.
 
-4. **Windmill — schedules** (one per product)
-   1. Schedules → New schedule
-   2. Pick the script `f/distribution/reddit_discovery`
-   3. Cron: `0 9 * * *` (daily 9am local — adjust to your timezone in the schedule editor)
-   4. Args: paste the JSON for the relevant product (see below)
+### How candidates get scored (step 1)
 
-### Schedule args
+| Signal | Points |
+|--------|--------|
+| Title contains `?` | +50 |
+| Question words in title/body (how, what, anyone, looking for, recommend, ...) | up to +30 |
+| Product keyword hit (configurable per product) | up to +40 |
+| Posted < 24h ago | +25 (or +15 < 3d, +5 < 7d) |
+| < 3 comments (under-answered) | +15 (or +8 < 8 comments, −10 if > 30) |
+| Reddit upvotes ≥ 5 | up to +20 (or −5 if score < 1) |
 
-The script takes two args: `config` (an object) and `notionToken` (a string from the Windmill variable).
+Filters applied after scoring: `archived`, age cutoff (`freshnessDays`), `excludeAuthors`, promo flags ("i built", "[promo]", etc.), and `minHeuristicScore` (default 30).
 
-In Windmill, set `notionToken` to reference the variable: `$var:f/distribution/notion_token`.
+### How candidates get written (step 2)
 
-#### Numblr
-
-```json
-{
-  "config": {
-    "productName": "numblr",
-    "subs": [
-      "DuolingoEnglishTest",
-      "ToeflAdvice",
-      "EnglishLearning",
-      "languagelearning",
-      "EnglishPractice",
-      "Accents",
-      "IELTS"
-    ],
-    "queries": [
-      "listening",
-      "numbers",
-      "phone numbers",
-      "dates",
-      "money listening",
-      "ielts listening",
-      "toefl listening",
-      "listen and type",
-      "catch numbers",
-      "spoken numbers"
-    ],
-    "productKeywords": [
-      "numbers",
-      "listening",
-      "phone",
-      "dates",
-      "money",
-      "ielts",
-      "toefl",
-      "listen-and-type"
-    ],
-    "excludeAuthors": ["neekey2"],
-    "notionDatabaseId": "df2c80d3-ac7e-4c3a-9e0b-ada5c67fd48a",
-    "topN": 10,
-    "freshnessDays": 7
-  },
-  "notionToken": "$var:f/distribution/notion_token"
-}
-```
-
-#### Zahlhaus
-
-```json
-{
-  "config": {
-    "productName": "zahlhaus",
-    "subs": [
-      "German",
-      "Germanlearning",
-      "lernen_German"
-    ],
-    "queries": [
-      "Zahlen",
-      "numbers",
-      "Hörverstehen",
-      "listening",
-      "Nicos Weg",
-      "A1 listening",
-      "two and forty",
-      "42 vs 24",
-      "alphabet listening",
-      "spoken numbers"
-    ],
-    "productKeywords": [
-      "zahlen",
-      "numbers",
-      "hörverstehen",
-      "listening",
-      "42",
-      "24",
-      "two and forty"
-    ],
-    "excludeAuthors": ["neekey2"],
-    "notionDatabaseId": "34a4f2ba-6e96-411c-ac34-74f0f2eea758",
-    "topN": 8,
-    "freshnessDays": 7
-  },
-  "notionToken": "$var:f/distribution/notion_token"
-}
-```
-
-### How it works (recap)
-
-1. Pulls existing URLs from the Notion DB to dedupe.
-2. For each (sub, query) combo: hits `https://www.reddit.com/r/{sub}/search.json?q={q}&restrict_sr=on&sort=new&t=month&limit=50` (no auth, public JSON API), sleeps 1.2s between calls to stay under Reddit's anonymous rate limit (~60/min).
-3. Filters: not archived, not removed, posted within `freshnessDays`, not in Notion already, not from `excludeAuthors`, no obvious self-promo flags, relevance score ≥ 30.
-4. Scores each candidate (question intensity + product-keyword fit + recency + low-comment-count + upvote signal). De-dupes per URL keeping highest-scoring match.
-5. Writes top N to the Notion DB with `Status = New`.
+1. Query the Notion DB once for all existing URLs (paginated, up to 2000).
+2. Filter out candidates whose URL already exists (dedupe).
+3. Take top `topN` by heuristic score.
+4. For each, create a Notion page with `Status = New`, snippet, score, why-match, etc.
 
 ### Reviewing candidates
 
-Open the Notion DB each morning. Each row has a `Status` select:
+Open the two Notion DBs each morning. Each row has a `Status` select:
 
 - `New` — fresh, needs review
 - `Reviewed` — looked at, deciding
 - `Replied` — drafted/posted a reply (use `/social reply <url>` to draft)
 - `Skip` — passed on (low fit, archived, already replied elsewhere, etc.)
-- `Archived` — auto-aged out (you can manually flip old `New` rows here)
+- `Archived` — auto-aged out (manually flip old `New` rows here)
 
 The `Why Match` column explains why each thread surfaced.
 
 ### Tuning
 
-If too noisy: raise the `relevanceScore < 30` threshold in `reddit-discovery.ts`, narrow the `queries` array, or drop a sub from `subs`.
+If too noisy: raise `minHeuristicScore` in the schedule args (default 30; try 50), narrow the `queries` array, or drop a sub from `subs`.
 
-If too sparse: lower the threshold, add queries, or extend `freshnessDays` to 14.
+If too sparse: lower `minHeuristicScore`, add queries, or extend `freshnessDays`.
 
 If a sub frequently produces irrelevant results, remove it from `subs`. Memory rules already say to skip r/TOEFL, r/ENGLISH, r/GlobalEnglishPrep, r/Deutsch, r/AskAGerman for product mentions.
+
+### Future: AI scoring step
+
+The flow leaves room for a step `a2` between search and write that sends top-N candidates to Haiku 4.5 for semantic relevance rating + a 1-line `Why Match`. Cost ~$5/year for both products. Add when title-only ambiguity becomes a real problem (current heuristic surfaces "What do I do?" type vague titles occasionally).
+
+### Future: posting via stride
+
+Posting/replying to Reddit needs the user's logged-in browser session, which lives outside the Windmill Docker container. When we add automated posting (vs current manual `/social reply`), wrap stride-cli in a script that runs on the host and have Windmill trigger it via webhook or local Docker exec.

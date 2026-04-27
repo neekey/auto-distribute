@@ -1,0 +1,59 @@
+{
+  "_comment": "Source-of-truth definition for the Windmill flow at f/distribution/reddit_discovery_flow. To re-create or update, POST to /api/w/<ws>/flows/create or /flows/update.",
+  "path": "f/distribution/reddit_discovery_flow",
+  "summary": "Daily Reddit discovery -> Notion",
+  "description": "Step 1: search target subs and score by heuristic. Step 2: dedupe against Notion DB and write top N as Status=New.",
+  "value": {
+    "modules": [
+      {
+        "id": "a",
+        "summary": "Search + score Reddit threads",
+        "value": {
+          "type": "script",
+          "path": "f/distribution/reddit_search_score",
+          "input_transforms": {
+            "productName": { "type": "javascript", "expr": "flow_input.productName" },
+            "subs": { "type": "javascript", "expr": "flow_input.subs" },
+            "queries": { "type": "javascript", "expr": "flow_input.queries" },
+            "productKeywords": { "type": "javascript", "expr": "flow_input.productKeywords" },
+            "excludeAuthors": { "type": "javascript", "expr": "flow_input.excludeAuthors" },
+            "freshnessDays": { "type": "javascript", "expr": "flow_input.freshnessDays" },
+            "minHeuristicScore": { "type": "javascript", "expr": "flow_input.minHeuristicScore" }
+          }
+        }
+      },
+      {
+        "id": "b",
+        "summary": "Dedupe + write to Notion",
+        "value": {
+          "type": "script",
+          "path": "f/distribution/notion_write_candidates",
+          "input_transforms": {
+            "productName": { "type": "javascript", "expr": "flow_input.productName" },
+            "candidates": { "type": "javascript", "expr": "results.a.candidates" },
+            "notionDatabaseId": { "type": "javascript", "expr": "flow_input.notionDatabaseId" },
+            "notion": { "type": "javascript", "expr": "flow_input.notion" },
+            "topN": { "type": "javascript", "expr": "flow_input.topN" }
+          }
+        }
+      }
+    ]
+  },
+  "schema": {
+    "type": "object",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "required": ["productName", "subs", "queries", "notionDatabaseId", "notion"],
+    "properties": {
+      "productName": { "type": "string" },
+      "subs": { "type": "array", "items": { "type": "string" } },
+      "queries": { "type": "array", "items": { "type": "string" } },
+      "productKeywords": { "type": "array", "items": { "type": "string" }, "default": [] },
+      "excludeAuthors": { "type": "array", "items": { "type": "string" }, "default": [] },
+      "freshnessDays": { "type": "number", "default": 7 },
+      "minHeuristicScore": { "type": "number", "default": 30 },
+      "notionDatabaseId": { "type": "string" },
+      "notion": { "type": "object", "format": "resource-notion" },
+      "topN": { "type": "number", "default": 10 }
+    }
+  }
+}
