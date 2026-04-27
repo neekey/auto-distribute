@@ -22,13 +22,13 @@ Auto-distribute is a set of Claude Code commands (`.claude/commands/`) that orch
 |---------|-------------|
 | `/distribute` | Main entry point — analyze product and create distribution strategy |
 | `/submit` | Submit to launch platforms and directories (replaces `/launch` + `/directories`) |
-| `/social` | Post and engage on X and Reddit via Stride CLI |
+| `/social` | Post and engage on X and Reddit via Stride CLI. Sub-commands: `/social reply <url>` (manual reply to a thread), `/social post <subreddit>` (manual post to a specific sub) |
 | `/seo-audit` | Audit landing page SEO (meta tags, OG, sitemap, speed) + agent-readiness scan via isitagentready.com |
 | `/seo-content` | Research keywords and generate SEO pages/blog content |
 | `/seo-analyze` | Analyze Search Console data, measure content performance, recommend updates |
 | `/ga-audit` | Audit GA4 behavior data — landing pages, traffic mix, AI referrers (ChatGPT / Perplexity / Claude) |
 | `/search-console` | Google Search Console: submit URLs, check indexing |
-| `/affiliate` | Set up an affiliate program — agreement, Tally application form, welcome email, optional Notion + Tally provisioning. See `AFFILIATE.md`. |
+| `/affiliate` | Set up an affiliate program — agreement, Tally application form, welcome email, optional Notion + Tally provisioning. See `AFFILIATE.md`. Sub-command: `/affiliate add <url> [context]` to manually add a creator (YouTube, Substack, LinkedIn, IG, TikTok, X) and draft platform-tailored outreach. |
 | `/remind` | Create a local macOS Reminders entry for recurring review tasks (e.g., weekly `/social engage`). Use when remote `/schedule` can't (stride CLI is local-only). |
 | `/sync-template` | Pull latest commands/docs from the auto-distribute template repo |
 
@@ -91,6 +91,12 @@ Media assets are stored in `assets/` (gitignored):
 - `PLATFORMS.md` — launch platforms and directories submitted to
 - `AGENT-READINESS.md` — how to make sites discoverable/usable by AI agents (llms.txt, markdown negotiation, content signals, MCP server cards). `/seo-audit` scores against this via [isitagentready.com](https://isitagentready.com).
 - `AFFILIATE.md` — affiliate program setup: decision framework, commission economics, defensive package, Stripe + Tally setup, Tally API gotchas, outreach patterns. Consumed by `/affiliate`.
+
+## Windmill workflows
+
+Automated workflows that run on the local Windmill instance (`~/workspaces/windmill`). See `windmill/README.md` for full setup.
+
+- `windmill/reddit-discovery.ts` — daily Reddit thread discovery → Notion DB. For each product (Numblr, Zahlhaus), searches target subs for question-shaped threads, dedupes against existing Notion rows, scores by relevance, writes top N as `Status: New` for manual review. Pair with `/social reply <url>` to draft replies.
 
 ## Scripts
 
