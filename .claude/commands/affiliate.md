@@ -1,4 +1,4 @@
-Set up an affiliate program for a product — agreement, application form, welcome email, optional Notion + Tally provisioning.
+Set up an affiliate program for a product (agreement, application form, welcome email, optional Notion + Tally provisioning), or manually add a creator to the roster and draft platform-tailored outreach via `/affiliate add <url> [context]`.
 
 The user provides product context: $ARGUMENTS
 
@@ -9,6 +9,12 @@ Read `AFFILIATE.md` (in the auto-distribute root) for the underlying knowledge �
 Check if `$ARGUMENTS` contains `--project <path>`. If yes, extract the path and use it as the base directory for all per-product files (`PRODUCT.md`, `affiliate/`, `state/`). Remove `--project <path>` from arguments before processing.
 
 If no `--project`, use the current working directory.
+
+## Step 0.5: Sub-command routing
+
+If `$ARGUMENTS` starts with `add ` followed by a URL, jump to the **Manual creator add** flow at the end of this doc. Don't run the program-setup flow below.
+
+Otherwise (no sub-command, or "setup", or other words), continue to the program-setup flow starting at Step 1.
 
 ## Step 1: Read Context
 
@@ -175,8 +181,120 @@ Tell the user:
   - Set up a Google Sheet for monthly payout tracking
 - Optionally offer to schedule a recurring `/remind` (or local macOS reminder) for monthly payout processing on the 1st of each month
 
+## Manual creator add (sub-command)
+
+Triggered by `/affiliate add <url> [optional context note]`. The URL points to a creator's channel/profile (YouTube, Substack, LinkedIn, Instagram, TikTok, X, podcast, blog). Goal: append them to the roster as a `researched` prospect, draft a platform-tailored outreach message, save the draft for user review.
+
+### Step A1: Parse the input
+
+1. The first non-`--project` token after `add` is the URL. Anything after the URL is free-form context (e.g., "saw their German numbers video" or "founder mentioned us on X").
+2. Detect platform from the URL host:
+   - `youtube.com` / `youtu.be` → `youtube`
+   - `substack.com` (or custom domain `*.substack.com`) → `substack`
+   - `linkedin.com/in/` or `linkedin.com/company/` → `linkedin`
+   - `instagram.com` → `instagram`
+   - `tiktok.com` → `tiktok`
+   - `x.com` / `twitter.com` → `x`
+   - anything else → `other` (treat as a blog/podcast/personal site)
+3. Extract a handle/slug from the URL path (e.g., `youtube.com/@anja` → `anja`; `linkedin.com/in/jane-doe` → `jane-doe`). Use this as the creator `id` if no name yet.
+
+### Step A2: Read state
+
+1. Read `state/affiliate-program.json`. If it doesn't exist, the program isn't set up yet — tell the user to run `/affiliate` first to create the program.
+2. **Dedupe** — if the `creators[]` array already contains a record with the same `channel` URL (case-insensitive, ignoring trailing slash), abort and tell the user. Show them the existing record's `status` so they can decide what to do (e.g., follow up vs. skip).
+
+### Step A3: Gather creator info
+
+Try a lightweight WebFetch on the URL to extract: display name, bio/description line, recent piece-of-content title (a video, article, post). Don't push hard — many platforms gate this. If the fetch is thin or blocked:
+- Pull what you can from the URL itself (handle, platform).
+- Ask the user for the creator's display name and one specific piece of content to reference (the user often already has a reason they dropped this link).
+
+Do **not** fabricate audience size, niche, or content references. If you can't ground a claim, leave the field null and reference only what the user gave you in the context note.
+
+### Step A4: Append the creator record
+
+Add a new entry to `creators[]` in `state/affiliate-program.json`:
+
+```json
+{
+  "id": "<handle-or-slug>",
+  "name": "<display name, or null if unknown>",
+  "email": null,
+  "channel": "<the URL>",
+  "platform": "<youtube|substack|linkedin|instagram|tiktok|x|other>",
+  "country": null,
+  "niche": "<short, from bio if available, else null>",
+  "context_note": "<the free-form note from the user, verbatim>",
+  "added_at": "<today's date YYYY-MM-DD>",
+  "source": "manual",
+  "status": "researched",
+  "outreach": [
+    {
+      "date": "<today>",
+      "channel": "<see channel-mapping below>",
+      "action": "drafted",
+      "variant": "manual-initial",
+      "draft_path": "affiliate/outreach-drafts/<id>-<platform>.md"
+    }
+  ]
+}
+```
+
+**Channel mapping (which medium the outreach will go through):**
+| Platform | Outreach channel | Tone notes |
+|----------|-----------------|------------|
+| YouTube | email (from About) or YouTube DM if no email | Reference a specific video. Long-form creators expect substance. |
+| Substack | email (every Substack has the author's contact) | Newsletter peers; reference a recent post by title. |
+| LinkedIn | LinkedIn DM | Disclose side-project per AFFILIATE.md § "Side-project disclosure on profile-visible channels". |
+| Instagram | IG DM | Short, casual, mobile-first. No long paragraphs. |
+| TikTok | TikTok DM | Even shorter than IG. Two short sentences max. |
+| X / Twitter | X DM | Casual, concise. |
+| Other (blog/podcast) | email | Use the contact / about page email. |
+
+### Step A5: Draft the outreach message
+
+Create `affiliate/outreach-drafts/<id>-<platform>.md` with:
+
+1. **Header metadata** (frontmatter or visible block): creator id, platform, channel, draft date, link to the agreement / Tally form.
+2. **Subject line** (only for email-style channels — YouTube/Substack/blog/X-cold-email). Follow `AFFILIATE.md` § "Subject line discipline" (plain descriptor, no "Quick note"-style throat-clearing).
+3. **Body**, wrapped in `--- copy from below this line ---` / `--- copy from above this line ---` markers (per the `feedback_drafts_no_blockquotes` memory rule and AFFILIATE.md guidance). Plain text only, no `>` blockquotes.
+
+Body follows the three-part structure from `AFFILIATE.md` § "DM template structure":
+1. **Specific reference** — what you saw from them (use the user's context note + any verified content title from Step A3). Don't generalize ("love your channel"); cite the actual piece.
+2. **One-sentence pitch** — what the product is, why it fits *their audience*. Pull from `PRODUCT.md`.
+3. **Low-friction ask** — free [premium tier] account to try, no commitment, *not* a promotion ask. Lead with the trial, never with the affiliate code.
+
+**Tone rules to enforce** (cross-reference user memory):
+- No em-dashes (this is human-facing prose; obvious AI tell).
+- For LinkedIn / direct email: include the side-project clause ("[Product] is a side project I've been building outside my day job").
+- For Substack / IG / TikTok / platform DMs: skip the side-project clause.
+- Match language to creator's content language if obvious (German creator → German draft; otherwise English).
+
+### Step A6: Present and confirm
+
+Show the user:
+- The new creator record being added (so they can correct fields).
+- The draft path.
+- The full draft body inline so they can copy or ask for revisions.
+
+Ask the user to either:
+- Approve as-is (you save the record + draft file).
+- Request changes (revise inline, then save).
+- Skip saving (don't write anything to state).
+
+Do **not** auto-send. The user manually copy-pastes from the draft file into the actual platform — no API for IG/TikTok/LinkedIn DMs from this command.
+
+### Step A7: After saving
+
+Tell the user:
+- File saved to `affiliate/outreach-drafts/<id>-<platform>.md`.
+- State updated: creator added with `status: researched`, outreach entry logged with `action: drafted`.
+- Reminder: when they actually send the message, run `/affiliate add <url>` again with no extra context — no, that's wrong. Better: they can either edit the JSON manually to flip the latest outreach entry's `action` from `drafted` to `sent` and add the send date, or they can ask in chat ("mark <name> as sent on X") and you'll do it.
+- Suggest: if they get a positive reply, follow `affiliate/response-playbook.md` (or `AFFILIATE.md` § "Response handling") to issue a comp code.
+
 ## Notes
 
 - This command is idempotent up to Step 4 (regenerating local files is fine). Steps 5 and 6 create external resources — re-running will produce duplicates if you don't handle the existing case. Always check whether the Notion page / Tally form already exist (look at `state/affiliate-program.json`).
 - For an existing program where you only want to update the agreement copy, edit `affiliate/agreement.md` directly, then use the Notion update-page tool to push changes upstream.
 - For form changes after the form is live, use `node scripts/build-affiliate-form.mjs --config <path> --patch <form-id>` to update the existing form in place. The PATCH replaces the entire `blocks` array, so always regenerate from your config — never echo back fields from the API's GET response.
+- The `add` sub-command is dedupe-aware and append-only against `creators[]`. It never modifies existing creator records; if the user wants to update one, they edit the JSON directly or ask in chat.
