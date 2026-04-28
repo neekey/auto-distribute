@@ -65,11 +65,14 @@ Filters applied after scoring: `archived`, age cutoff (`freshnessDays`), `exclud
 
 Open the two Notion DBs each morning. Each row has a `Status` select:
 
-- `New` — fresh, needs review
+- `New` — fresh, needs review (or auto-drafting via `/social draft-queue`)
 - `Reviewed` — looked at, deciding
-- `Replied` — drafted/posted a reply (use `/social reply <url>` to draft)
+- `Reply Drafted` — `/social draft-queue` has written a reply into the page body; review + post via `/social reply <url>`
+- `Replied` — posted a reply
 - `Skip` — passed on (low fit, archived, already replied elsewhere, etc.)
 - `Archived` — auto-aged out (manually flip old `New` rows here)
+
+The `/social draft-queue` command (in `auto-distribute/.claude/commands/social.md`) is designed for headless `claude -e` invocation after the discovery cron — see that file for the full flow.
 
 The `Why Match` column explains why each thread surfaced.
 

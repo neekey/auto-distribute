@@ -22,7 +22,7 @@ Auto-distribute is a set of Claude Code commands (`.claude/commands/`) that orch
 |---------|-------------|
 | `/distribute` | Main entry point — analyze product and create distribution strategy |
 | `/submit` | Submit to launch platforms and directories (replaces `/launch` + `/directories`) |
-| `/social` | Post and engage on X and Reddit via Stride CLI. Sub-commands: `/social reply <url>` (manual reply to a thread), `/social post <subreddit>` (manual post to a specific sub) |
+| `/social` | Post and engage on X and Reddit via Stride CLI. Sub-commands: `/social reply <url>` (manual reply), `/social post <subreddit>` (manual post), `/social draft-queue` (walk the Notion Reddit-discovery queue and pre-draft replies; designed for headless `claude -e` after the daily discovery cron) |
 | `/seo-audit` | Audit landing page SEO (meta tags, OG, sitemap, speed) + agent-readiness scan via isitagentready.com |
 | `/seo-content` | Research keywords and generate SEO pages/blog content |
 | `/seo-analyze` | Analyze Search Console data, measure content performance, recommend updates |
