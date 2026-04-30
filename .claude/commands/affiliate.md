@@ -149,7 +149,10 @@ If `TALLY_API_KEY` is not set, skip this step. Tell the user how to set it: Tall
 
 ## Step 7: Save State
 
-Create `state/affiliate-program.json` (gitignored under `state/`) with the program metadata. See `AFFILIATE.md` § "State tracking" for the schema.
+Choose tracking method based on project maturity:
+
+- **Starting out (1–10 creators):** Create `state/affiliate-program.json` (gitignored under `state/`) with the program metadata. See `AFFILIATE.md` § "State tracking" for the schema. This is a single JSON file with a `creators[]` array and append-only `outreach` log per creator.
+- **Scaling up (10+ creators):** Set up linked Notion databases instead. See `AFFILIATE.md` § "Notion tracking" for the schema. The Notion databases (Creators, Creator Channels, Outreach Log) give you kanban/calendar views and a UI for manual review. Use the Notion MCP tools to create and link records. Reference `zahlhaus/CLAUDE.md` § "Creator Outreach Tracking" for a working example with real database IDs.
 
 Initial state:
 ```json
@@ -213,7 +216,10 @@ Do **not** fabricate audience size, niche, or content references. If you can't g
 
 ### Step A4: Append the creator record
 
-Add a new entry to `creators[]` in `state/affiliate-program.json`:
+Determine where to write:
+
+- **If Notion databases exist** (check the project's `CLAUDE.md` for Notion DB IDs, or check if the user mentions Notion): create records in all 3 databases — a Creator page, one Channel page per link found, and an Outreach page for the draft event. Link them via relations. Use the Notion MCP tools (`mcp__notion__notion-create-pages`, `mcp__notion__notion-update-page`).
+- **Otherwise (JSON tracking):** Add a new entry to `creators[]` in `state/affiliate-program.json`:
 
 ```json
 {

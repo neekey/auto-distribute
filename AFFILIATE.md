@@ -472,6 +472,29 @@ The `personal_comp_code` (internal namespaced) is separate from the `audience_af
 
 This file is gitignored (under `state/`) since it contains creator PII and payout amounts.
 
+## Notion tracking (alternative to state JSON)
+
+For projects with heavier outreach volume, use linked Notion databases instead of `state/affiliate-program.json`. This gives you kanban pipeline views, calendar views by follow-up date, and a UI for manual review without editing JSON.
+
+**Recommended schema (3 linked databases):**
+
+| Database | Purpose | Key properties |
+|----------|---------|---------------|
+| **Creators** | Creator records | Name, Status (select), Niche (multi_select), Discovered/Last Contact/Follow Up (dates), Comp Code, Affiliate Code, Email, Audience Size |
+| **Creator Channels** | One per platform per creator | Name (title), Platform (select), URL, Creator (relation → Creators) |
+| **Outreach Log** | Every DM/email sent or reply received | Name (title), Date, Direction (sent/received select), Method (select), Summary (rich_text), Creator (relation → Creators) |
+
+**Relations:** Creators ↔ Channels (1:N), Creators ↔ Outreach Log (1:N).
+
+**Views to create:**
+- Creators → Kanban grouped by Status
+- Creators → Calendar by Follow Up
+- Outreach Log → Calendar by Date
+
+**Claude interaction:** Use the Notion MCP tools (`mcp__notion__notion-search`, `mcp__notion__notion-fetch`, `mcp__notion__notion-update-page`, `mcp__notion__notion-create-pages`) or the REST API directly. Query creators by status, create channel records and link them, log outreach events.
+
+**Existing setup:** See `zahlhaus/CLAUDE.md` § "Creator Outreach Tracking" for a working reference with real database IDs and relation property names.
+
 ## When to revisit / measure success
 
 After the first 6–8 weeks, evaluate:
