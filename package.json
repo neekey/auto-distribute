@@ -9,6 +9,7 @@
     "ga-report": "node scripts/ga-report.mjs"
   },
   "dependencies": {
+    "@notionhq/client": "^2.3.0",
     "google-auth-library": "^9.0.0"
   },
   "devDependencies": {

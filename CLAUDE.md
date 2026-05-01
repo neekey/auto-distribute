@@ -96,7 +96,7 @@ Media assets are stored in `assets/` (gitignored):
 
 Automated workflows that run on the local Windmill instance (`~/workspaces/windmill`). See `windmill/README.md` for full setup.
 
-- `windmill/reddit-discovery.ts` — daily Reddit thread discovery → Notion DB. For each product (Numblr, Zahlhaus), searches target subs for question-shaped threads, dedupes against existing Notion rows, scores by relevance, writes top N as `Status: New` for manual review. Pair with `/social reply <url>` to draft replies.
+- `windmill/flows/reddit-discovery-flow.json` (+ `windmill/scripts/reddit-search-score.ts`, `windmill/scripts/notion-write-candidates.ts`) — daily Reddit thread discovery → Notion DB. For each product (Numblr, Zahlhaus), searches target subs for question-shaped threads, dedupes against existing Notion rows, scores by relevance, writes top N as `Status: New` for manual review. Pair with `/social draft-queue` (auto-draft replies into Notion) or `/social reply <url>` (manual reply).
 
 ## Scripts
 
@@ -207,6 +207,44 @@ Config schema and Tally API gotchas (post-2026-02 schema validation) are documen
 2. `TALLY_API_KEY` env var set when running the script
 
 **What needs the Tally UI (no API):** email notifications, submission redirect, captcha, custom theme. Configure these manually after the form is created.
+
+### `scripts/notion-cli.mjs` — Notion REST API helper
+
+Thin CLI over the official `@notionhq/client` SDK for `/social draft-queue`, `/social reply <url>` (queue lookup), and `/affiliate add` (Notion tracking path). Replaces the `mcp__notion__*` tools, which gate some operations behind enterprise plans and aren't reliable for headless `claude -e` runs.
+
+```bash
+# Find New rows in a discovery DB, sorted by Reddit Score
+node scripts/notion-cli.mjs query --database <db-id> \
+  --filter '{"property":"Status","select":{"equals":"New"}}' \
+  --sorts '[{"property":"Reddit Score","direction":"descending"}]' --max 5
+
+# Look up a queue row by URL
+node scripts/notion-cli.mjs find-by-url --database <db-id> --url <reddit-url>
+
+# Read a draft from the page body
+node scripts/notion-cli.mjs get-page-body --page <page-id>
+
+# Replace the page body with a draft (paragraphs split on blank lines)
+node scripts/notion-cli.mjs replace-page-body --page <page-id> --content-file /tmp/draft.txt
+
+# Update properties (Notion v1 shape)
+node scripts/notion-cli.mjs update-properties --page <page-id> \
+  --properties '{"Status":{"select":{"name":"Reply Drafted"}}}'
+
+# Create a page in a database
+node scripts/notion-cli.mjs create-page --database <db-id> \
+  --properties '{"Name":{"title":[{"text":{"content":"..."}}]}}' [--body-file <path>]
+```
+
+All subcommands write JSON to stdout, log to stderr, exit non-zero on error. Properties use the raw Notion v1 shape (same as the SDK).
+
+**Prerequisites:**
+1. Create a Notion internal integration at https://www.notion.so/profile/integrations → copy the secret (starts with `secret_` or `ntn_`).
+2. In Notion, open the parent page that contains your databases → "..." menu → Connections → add the integration. Access propagates to child databases.
+3. Set `NOTION_API_KEY` in your shell env (or `direnv` per-project).
+4. `npm install` in auto-distribute if `node_modules/@notionhq/client` is missing.
+
+The Windmill `notion-write-candidates.ts` flow uses the same SDK with a typed Windmill resource (`$res:u/<user>/notion`); the local CLI is the same logic with an env-var token.
 
 ## State Tracking
 
