@@ -28,24 +28,51 @@ If unclear, ask what they want to do.
 
 ### Manual drop-in modes
 
-Three manual modes let the user bypass auto-search:
+Three manual modes let the user bypass auto-search.
+
+**Notion access:** the queue-aware paths below use `scripts/notion-cli.mjs` against the Notion REST API. Requires `NOTION_API_KEY` in env (see `CLAUDE.md` § "Notion access for /social and /affiliate"). Do NOT use `mcp__notion__*` tools here — some are gated to enterprise plans and will fail in headless `claude -e` runs.
+
+**Notion DBs (hardcoded by product):**
+
+| Product (PRODUCT.md `# Product:` line) | Notion database ID | DB URL |
+|---|---|---|
+| Numblr | `df2c80d3-ac7e-4c3a-9e0b-ada5c67fd48a` | https://www.notion.so/df2c80d3ac7e4c3a9e0bada5c67fd48a |
+| Zahlhaus | `34a4f2ba-6e96-411c-ac34-74f0f2eea758` | https://www.notion.so/34a4f2ba6e96411cac3474f0f2eea758 |
+
+When `--project` is given, use that product's DB. Without `--project`, infer from `PRODUCT.md`'s `# Product:` line; if neither name matches, abort with a clear error.
+
+**Page-body invariant (across modes):** for any row whose `Status` is `Reply Drafted`, the page body MUST contain only the reply text — plain paragraphs, no headings, no markers, no meta. `/social reply <url>` posts the body verbatim. Skip-reasons and triage notes go into the `Fit Notes` property, never the body.
 
 **Manual reply** — `/social reply <url>` (or `$ARGUMENTS` starts with `reply http...`):
 1. Detect platform from URL host: `reddit.com` → Reddit; `x.com` / `twitter.com` → X.
 2. Fetch the thread/tweet to read the original content. For Reddit: `stride channel reddit comments <url> --max 50 --json`. For X: WebFetch the tweet URL.
 3. **Dedupe check** — read `state/social-posts.json` and abort if `engagements[].original_url` already contains this URL. Tell the user we already replied.
 4. **Reddit only** — verify the thread is not archived (look at the post JSON's `archived` field). Skip if archived.
-5. **Reddit only — check the Notion discovery queue for an existing draft.** Both Numblr and Zahlhaus DBs (data source URLs in the `draft-queue` section below) may have a row for this thread. To find it:
-   - Use `mcp__notion__notion-search` with `data_source_url` set to the right product's data source (use `--project` if provided, else check both). Set `query` to a distinctive substring of the thread title; `page_size: 25`; `max_highlight_length: 0`. Skim results for a row whose `userDefined:URL` exactly matches the input URL (fetch each result's properties to confirm — search ranks by title, not URL).
-   - If a matching row is found AND its `Status` is `Reply Drafted`: read the page body via `mcp__notion__notion-fetch`. **The entire `<content>` block IS the draft** — no extraction logic needed, no markers to parse. The `/social draft-queue` flow guarantees the body contains only the reply text (meta lives in the `Product Fit` and `Fit Notes` columns). If the body is empty, abort with an error. Use the body as the starting draft (skip step 6 fresh drafting; jump to step 7). Note the page ID — you'll flip Status after posting.
-   - If a matching row is found with `Status = New` (no draft yet): proceed with fresh drafting, but track the page ID so you can flip Status after posting.
-   - If no matching row, proceed with fresh drafting (typical for ad-hoc replies).
+5. **Reddit only — check the Notion discovery queue for an existing draft.**
+   - Pick the DB ID from the table above (use `--project` if provided, else infer from `PRODUCT.md`; if neither, query both DBs in turn).
+   - Look up the row by URL:
+     ```bash
+     node scripts/notion-cli.mjs find-by-url --database <db-id> --url <reddit-url>
+     ```
+     Returns the page object or `null`. If `null`, no queue row exists; proceed with fresh drafting.
+   - If a row is found, read `properties.Status.select.name`:
+     - **`Reply Drafted`** — read the page body and use it as the draft:
+       ```bash
+       node scripts/notion-cli.mjs get-page-body --page <page-id>
+       ```
+       The `text` field is the entire draft. If empty, abort with an error (something's wrong with the upstream draft). Skip step 6; jump to step 7. Track the page ID for the post-flip in step 8.
+     - **`New`** — no draft yet. Proceed with fresh drafting; track the page ID for the post-flip.
+     - Other statuses (`Replied`, `Skip`, `Archived`, `Reviewed`) — treat like no row; proceed with fresh drafting and don't flip status afterwards.
 6. Draft a reply per the engagement rules in Step 4 (lead with value, mention product naturally only if relevant, brief and authentic). Skip this step if step 5 loaded an existing draft.
 7. Present the draft + original-post context. Ask user to approve.
 8. On approval:
    - Post via stride: `stride channel reddit reply <url> "<reply text>"`.
    - Append to `state/social-posts.json` with `source: "manual"`, `status: "sent"`.
-   - **If a Notion queue row was found** (step 5): flip its Status to `Replied` via `mcp__notion__notion-update-page` (`command: update_properties`, `properties: {"Status": "Replied"}`).
+   - **If a Notion queue row was found** (step 5): flip its Status to `Replied`:
+     ```bash
+     node scripts/notion-cli.mjs update-properties --page <page-id> \
+       --properties '{"Status":{"select":{"name":"Replied"}}}'
+     ```
    - If user says "save for later," append with `status: "drafted"` and skip posting + skip the Notion Status flip.
 
 **Manual post** — `/social post <subreddit>` or `/social post r/<subreddit>` (a subreddit name is the next token after "post"):
@@ -61,43 +88,55 @@ Three manual modes let the user bypass auto-search:
 
 The Reddit-discovery flow (Windmill, see `windmill/README.md`) writes candidate threads to a per-product Notion DB with `Status = New`. This mode walks that queue and pre-drafts replies for human review later.
 
-**Notion DBs (hardcoded by product):**
-
-| Product (PRODUCT.md `# Product:` line) | Notion data source URL | DB URL |
-|---|---|---|
-| Numblr | `collection://3a8e04c8-c866-4daa-8e91-095187484610` | https://www.notion.so/df2c80d3ac7e4c3a9e0bada5c67fd48a |
-| Zahlhaus | `collection://39902f7a-3b5d-48db-818b-caa1d3b2c9d4` | https://www.notion.so/34a4f2ba6e96411cac3474f0f2eea758 |
-
-If `PRODUCT.md` has neither name in its title line, abort with a clear error.
-
-**Status options on the DB:** `New`, `Reviewed`, `Reply Drafted`, `Replied`, `Skip`, `Archived`. This mode reads `New` and writes `Reply Drafted` (or `Skip` for archived/poor-fit threads).
+**Status options on the DB:** `New`, `Reviewed`, `Reply Drafted`, `Replied`, `Skip`, `Archived`. This mode reads `New` and writes either `Reply Drafted` or `Skip`.
 
 **Schema fields written by this mode:**
 - `Status` → `Reply Drafted` (or `Skip`)
 - `Product Fit` (select: `strong` / `weak` / `none`) — how well the thread fits the product's mechanic
-- `Fit Notes` (rich text) — 1-2 sentences: what subreddit posture applies, whether to mention the product, why
-- **Page body** → the reply draft, **and only the reply draft**. No headings, no markers, no meta. The whole body gets posted verbatim by `/social reply <url>`.
+- `Fit Notes` (rich text) — 1-2 sentences: what subreddit posture applies, whether to mention the product, why. **Skip-reasons also go here** (e.g., "skipped: thread archived"; "skipped: already engaged, see state/social-posts.json").
+- **Page body** — only set on `Reply Drafted` rows; contains the reply text only (see invariant above). On `Skip` rows, leave the body empty.
 
 **Steps:**
 
-1. **Find the queue.** Use `mcp__notion__notion-search` with the product's `data_source_url` and `filters.created_date_range.start_date` set to **2 days ago** (covers daily-cron lag + manual reruns). Set `page_size: 25`, `max_highlight_length: 0`, query `"a"` (broad, returns all rows in created window). The MCP can't filter by `Status` directly — fetch each result page and filter client-side to `Status = "New"`.
-2. **Cap per run** to **5 rows** to keep the session bounded. If more than 5 New rows exist, process the 5 with the highest `Reddit Score` first; the rest stay `New` for the next run.
-3. **For each New row:**
-   a. Read `userDefined:URL`, `Title`, `Subreddit`, `Snippet`, `Why Match`, `Reddit Score` from properties.
-   b. **Dedupe:** read `state/social-posts.json` and skip if `engagements[].original_url` already contains the Reddit URL. Set Status to `Skip` with a body note `"Already engaged — see state/social-posts.json"`.
-   c. **Fetch thread:** `stride channel reddit comments <url> --max 30 --json`.
-   d. **Archived check:** if the thread JSON's `archived` field is true, set Status to `Skip` with a body note explaining why; continue.
-   e. **Sub-rules check:** consult memory (`reference_reddit_sub_rules.md`, `project_numblr_reddit_engagement.md`, `project_zahlhaus_distribution.md`) for the subreddit's posture on product mentions. Hard-skip subs (r/TOEFL, r/ENGLISH, r/GlobalEnglishPrep, r/Deutsch, r/AskAGerman): Status `Skip` with a body note.
-   f. **Fit assessment:** decide if a product mention is genuinely relevant. If not, draft a pure-helpful reply with no product mention (still useful — accumulates karma + organic feel).
-   g. **Draft the reply** per Step 4 engagement rules + memory tone rules (no em-dashes; user-recommendation tone if mentioning the product; no link unless the sub clearly allows it).
-   h. **Write the page body** via `mcp__notion__notion-update-page` `command: replace_content`. **The body MUST contain only the reply text** — plain paragraphs, no headings, no meta. Whatever is in the body is what gets posted to Reddit verbatim. Use blank lines between paragraphs as Reddit will render them.
+1. **Find the queue.** Pick the product's DB ID, then query for `Status = New` rows sorted by score:
+   ```bash
+   node scripts/notion-cli.mjs query --database <db-id> \
+     --filter '{"property":"Status","select":{"equals":"New"}}' \
+     --sorts '[{"property":"Reddit Score","direction":"descending"}]' \
+     --max 5
+   ```
+   The CLI returns an array of page objects. Cap is 5 per run to keep the session bounded; remaining rows stay `New` for the next run.
+2. **For each New row** (read `id` and `properties.URL.url`, `properties.Title.title[0].plain_text`, `properties.Subreddit.select.name`, `properties.Snippet.rich_text[0].plain_text`, `properties["Why Match"].rich_text[0].plain_text`, `properties["Reddit Score"].number` from the page object):
+   a. **Dedupe:** read `state/social-posts.json` and skip if `engagements[].original_url` already contains the Reddit URL. Use the skip helper below with reason `"already engaged — see state/social-posts.json"`.
+   b. **Fetch thread:** `stride channel reddit comments <url> --max 30 --json`.
+   c. **Archived check:** if the thread JSON's `archived` field is true, skip with reason `"thread archived"`.
+   d. **Sub-rules check:** consult memory (`reference_reddit_sub_rules.md`, `project_numblr_reddit_engagement.md`, `project_zahlhaus_distribution.md`) for the subreddit's posture on product mentions. Hard-skip subs (r/TOEFL, r/ENGLISH, r/GlobalEnglishPrep, r/Deutsch, r/AskAGerman): skip with reason `"hard-skip sub for product mentions"`.
+   e. **Fit assessment:** decide if a product mention is genuinely relevant. If not, draft a pure-helpful reply with no product mention (still useful — accumulates karma + organic feel).
+   f. **Draft the reply** per Step 4 engagement rules + memory tone rules (no em-dashes; user-recommendation tone if mentioning the product; no link unless the sub clearly allows it).
+   g. **Write the page body.** Save the draft to a temp file, then:
+   ```bash
+   node scripts/notion-cli.mjs replace-page-body --page <page-id> --content-file /tmp/draft.txt
+   ```
+   The CLI splits on blank lines into paragraph blocks. Body MUST be reply text only (per invariant above).
+   h. **Set properties:**
+   ```bash
+   node scripts/notion-cli.mjs update-properties --page <page-id> --properties '{
+     "Status": {"select": {"name": "Reply Drafted"}},
+     "Product Fit": {"select": {"name": "strong"}},
+     "Fit Notes": {"rich_text": [{"text": {"content": "<1-2 sentence note>"}}]}
+   }'
+   ```
 
-   i. **Set properties** via `mcp__notion__notion-update-page` `command: update_properties` with all of:
-      - `Status`: `Reply Drafted`
-      - `Product Fit`: `strong` | `weak` | `none` — based on how well the thread matches the product's core mechanic
-      - `Fit Notes`: 1-2 sentence rich-text note explaining the subreddit posture, mention/no-mention decision, and any sub-rule constraints (e.g., "r/IELTS conservative — no link, no product mention; substantive reply only").
+   **Skip helper** — when skipping a row at step a/c/d, run only the properties update (no body write):
+   ```bash
+   node scripts/notion-cli.mjs update-properties --page <page-id> --properties '{
+     "Status": {"select": {"name": "Skip"}},
+     "Product Fit": {"select": {"name": "none"}},
+     "Fit Notes": {"rich_text": [{"text": {"content": "skipped: <reason>"}}]}
+   }'
+   ```
 
-4. **Print summary** at the end: how many drafted, how many skipped (and why), how many remaining `New` rows in the queue. This is what shows up in `claude -e` output.
+3. **Print summary** at the end: how many drafted, how many skipped (and why), how many remaining `New` rows in the queue. This is what shows up in `claude -e` output.
 
 **Headless safety:** This mode never posts to Reddit. It only writes drafts to Notion. Human review happens in Notion before invoking `/social reply <url>` to post.
 

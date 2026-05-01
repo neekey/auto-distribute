@@ -491,7 +491,7 @@ For projects with heavier outreach volume, use linked Notion databases instead o
 - Creators → Calendar by Follow Up
 - Outreach Log → Calendar by Date
 
-**Claude interaction:** Use the Notion MCP tools (`mcp__notion__notion-search`, `mcp__notion__notion-fetch`, `mcp__notion__notion-update-page`, `mcp__notion__notion-create-pages`) or the REST API directly. Query creators by status, create channel records and link them, log outreach events.
+**Claude interaction:** Use `scripts/notion-cli.mjs` (REST API + integration secret). Don't rely on `mcp__notion__*` tools — some are gated to enterprise plans and aren't reliable for headless runs. See `CLAUDE.md` § "scripts/notion-cli.mjs" for the subcommand reference and how to set `NOTION_API_KEY`.
 
 **Existing setup:** See `zahlhaus/CLAUDE.md` § "Creator Outreach Tracking" for a working reference with real database IDs and relation property names.
 

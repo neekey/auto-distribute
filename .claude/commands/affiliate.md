@@ -97,18 +97,20 @@ Tone: founder-to-creator, warm but tight. Under ~200 words in body.
 
 ## Step 5: Create the Notion Agreement Page (optional)
 
-If the Notion MCP is connected (check via available tools), offer to create the agreement as a Notion sub-page.
+If `NOTION_API_KEY` is set and the integration has access to the target parent page, offer to create the agreement as a Notion sub-page using `scripts/notion-cli.mjs` (see `CLAUDE.md` § "scripts/notion-cli.mjs").
 
-1. Ask the user for the parent page or workspace where it should live (a project page, a "Distribution" workspace, etc.).
-2. Use `mcp__notion__notion-create-pages` to create a new page under that parent.
-3. Page title: `{Product name} Affiliate Program`.
-4. Page icon: the product's logo URL if hosted publicly (Notion accepts image URLs for icons; SVG sometimes renders inconsistently across clients — PNG is safer).
-5. Page cover: optional, ≥1500px wide image.
-6. Body content: paste from `affiliate/agreement.md`, but **strip the H1** (Notion creates the title from the `properties.title` field automatically; including an H1 in content duplicates it).
-7. Once created, prompt the user to publish the page (Share → Publish to web) so creators can view it without a Notion account. Save the published URL.
-8. Update `affiliate/agreement.md` and the Tally form's intro (later) with the published URL.
+**Caveat:** `notion-cli.mjs create-page` currently writes into a *database* (parent: database_id). Creating a sub-page directly under another page (parent: page_id) needs a one-off raw API call instead — the SDK supports `parent: { page_id }` but the helper doesn't expose that flag yet. For most users, the easier path is to do this step manually in Notion. Add the `--parent-page` flag to `notion-cli.mjs` if this becomes a frequent ask.
 
-If Notion MCP is not connected, skip this step. Tell the user how to do it manually: paste `affiliate/agreement.md` into a Notion page, publish it, share the URL.
+Manual path (recommended for now):
+1. Create a new page in Notion under the desired parent.
+2. Title: `{Product name} Affiliate Program`.
+3. Page icon: the product's logo URL if hosted publicly (Notion accepts image URLs for icons; SVG sometimes renders inconsistently across clients — PNG is safer).
+4. Page cover: optional, ≥1500px wide image.
+5. Paste from `affiliate/agreement.md`, but **strip the H1** (Notion creates the title from the page's title automatically; including an H1 in content duplicates it).
+6. Publish (Share → Publish to web) so creators can view it without a Notion account. Save the published URL.
+7. Update `affiliate/agreement.md` and the Tally form's intro (later) with the published URL.
+
+If Notion isn't being used for this project, skip this step.
 
 ## Step 6: Create the Tally Form (optional)
 
@@ -136,7 +138,7 @@ If `TALLY_API_KEY` env var is set, offer to create the form via API.
 
 3. The script prints the resulting form URL on success. Replace the `https://tally.so/r/REPLACE-WITH-FORM-ID` placeholder in `affiliate/agreement.md` with the real URL.
 
-4. If a Notion page was created in Step 5, also update the Notion page's "Apply" link via `mcp__notion__notion-update-page` with `update_content` and a content_updates entry.
+4. If a Notion page was created in Step 5, also update the published page's "Apply" link manually (open the page, edit the link block). The auto-distribute Notion CLI doesn't yet support content-block updates — only properties and full-body replace, both of which would clobber the agreement copy here.
 
 5. Update `affiliate/tally-form.md` with the live form URL.
 
@@ -203,8 +205,15 @@ Triggered by `/affiliate add <url> [optional context note]`. The URL points to a
 
 ### Step A2: Read state
 
-1. Read `state/affiliate-program.json`. If it doesn't exist, the program isn't set up yet — tell the user to run `/affiliate` first to create the program.
-2. **Dedupe** — if the `creators[]` array already contains a record with the same `channel` URL (case-insensitive, ignoring trailing slash), abort and tell the user. Show them the existing record's `status` so they can decide what to do (e.g., follow up vs. skip).
+1. Read `state/affiliate-program.json`. If it doesn't exist AND no Notion-based tracking is configured for this project (see Step A4 below), the program isn't set up yet — tell the user to run `/affiliate` first.
+2. **Dedupe** — based on the tracking method:
+   - **JSON tracking:** check `creators[]` for a record with the same `channel` URL (case-insensitive, ignoring trailing slash).
+   - **Notion tracking:** query the project's Channels DB by URL:
+     ```bash
+     node scripts/notion-cli.mjs find-by-url --database <channels-db-id> --url <input-url> --url-prop URL
+     ```
+     If non-null, fetch the linked Creator (`properties.Creator.relation[0].id` → `node scripts/notion-cli.mjs get-page --page <creator-id>`) and show its Name + Status.
+   - In either case, if a match exists, abort and tell the user the existing record's status.
 
 ### Step A3: Gather creator info
 
@@ -216,10 +225,43 @@ Do **not** fabricate audience size, niche, or content references. If you can't g
 
 ### Step A4: Append the creator record
 
-Determine where to write:
+Determine where to write. Notion tracking is detected by finding Creators / Channels / Outreach Log DB IDs in the project's `CLAUDE.md` (see `AFFILIATE.md` § "Notion tracking" for the schema). Otherwise fall back to JSON.
 
-- **If Notion databases exist** (check the project's `CLAUDE.md` for Notion DB IDs, or check if the user mentions Notion): create records in all 3 databases — a Creator page, one Channel page per link found, and an Outreach page for the draft event. Link them via relations. Use the Notion MCP tools (`mcp__notion__notion-create-pages`, `mcp__notion__notion-update-page`).
-- **Otherwise (JSON tracking):** Add a new entry to `creators[]` in `state/affiliate-program.json`:
+**Notion tracking** — three create-page calls, chained via the returned page IDs:
+
+```bash
+# 1. Create Creator. Capture .id from the JSON response.
+node scripts/notion-cli.mjs create-page --database <creators-db-id> --properties '{
+  "Name": {"title": [{"text": {"content": "<display name or handle>"}}]},
+  "Status": {"select": {"name": "Researched"}},
+  "Discovered": {"date": {"start": "<today YYYY-MM-DD>"}},
+  "Niche": {"multi_select": [{"name": "<niche>"}]}
+}'
+
+# 2. Create Channel page, linked to the Creator via relation.
+node scripts/notion-cli.mjs create-page --database <channels-db-id> --properties '{
+  "Name": {"title": [{"text": {"content": "<platform> — <handle>"}}]},
+  "Platform": {"select": {"name": "<YouTube|Substack|LinkedIn|Instagram|TikTok|X|Other>"}},
+  "URL": {"url": "<the URL>"},
+  "Creator": {"relation": [{"id": "<creator-page-id-from-step-1>"}]}
+}'
+
+# 3. Create Outreach Log entry, linked to the Creator. Method = the channel-mapping medium.
+node scripts/notion-cli.mjs create-page --database <outreach-db-id> --properties '{
+  "Name": {"title": [{"text": {"content": "Drafted: <platform>"}}]},
+  "Date": {"date": {"start": "<today>"}},
+  "Direction": {"select": {"name": "Sent"}},
+  "Method": {"select": {"name": "<email|LinkedIn DM|IG DM|TikTok DM|X DM>"}},
+  "Summary": {"rich_text": [{"text": {"content": "Draft saved at affiliate/outreach-drafts/<id>-<platform>.md. Context: <user note>"}}]},
+  "Creator": {"relation": [{"id": "<creator-page-id>"}]}
+}'
+```
+
+The Outreach `Direction = Sent` should actually stay `Drafted` until the user confirms the message went out — if the project's Outreach DB has a `Drafted` direction option, prefer it; otherwise keep the Summary clearly marked as "Draft saved...".
+
+Property names above match the schema in `AFFILIATE.md` § "Notion tracking". If the project's DBs use different names, adapt.
+
+**JSON tracking** — add a new entry to `creators[]` in `state/affiliate-program.json`:
 
 ```json
 {
@@ -295,7 +337,7 @@ Do **not** auto-send. The user manually copy-pastes from the draft file into the
 Tell the user:
 - File saved to `affiliate/outreach-drafts/<id>-<platform>.md`.
 - State updated: creator added with `status: researched`, outreach entry logged with `action: drafted`.
-- Reminder: when they actually send the message, run `/affiliate add <url>` again with no extra context — no, that's wrong. Better: they can either edit the JSON manually to flip the latest outreach entry's `action` from `drafted` to `sent` and add the send date, or they can ask in chat ("mark <name> as sent on X") and you'll do it.
+- Reminder: when they actually send the message, they can either edit `state/affiliate-program.json` manually to flip the latest outreach entry's `action` from `drafted` to `sent` and add the send date (or update the Notion Outreach Log row), or they can ask in chat ("mark <name> as sent on X") and you'll do it.
 - Suggest: if they get a positive reply, follow `affiliate/response-playbook.md` (or `AFFILIATE.md` § "Response handling") to issue a comp code.
 
 ## Notes
