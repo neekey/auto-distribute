@@ -483,7 +483,7 @@ Last updated: 2026-04-12
 | **Indie Hackers** | indiehackers.com | 80 | Nofollow | Free | Bootstrapped founders |
 | **Peerlist** | peerlist.io | 76 | Nofollow | Free | Professional network |
 | **TinyLaunch** | tinylaunch.com | 71 | Dofollow | Free | Small products |
-| **PeerPush** | peerpush.co | 72 | Dofollow | Free | Community launches |
+| **PeerPush** | peerpush.net | 72 | Dofollow | Free | Community launches |
 | **Startupbase** | startupbase.io | — | — | Free | General startup directory |
 
 ### General Software Directories
@@ -496,7 +496,7 @@ Last updated: 2026-04-12
 | **Alternative.me** | alternative.me | 74 | Dofollow | Free | Software alternatives |
 | **SoftwareWorld** | softwareworld.co | 73 | Dofollow | Free | B2B reviews |
 | **Startup Stash** | startupstash.com | 66 | Nofollow | Free | Startup tools |
-| **Open Launch** | openlaunch.co | 67 | Dofollow | Free | Open source |
+| **Open Launch** | open-launch.com | 67 | Dofollow | Free | Open source |
 | **Slant** | slant.co | ~65 | Mixed | Free | "Best X for Y" comparisons |
 | **Pitchwall** | pitchwall.co | 60 | Nofollow | Free | Startup pitches |
 | **Serchen** | serchen.com | ~50 | — | Free | Cloud/SaaS |
@@ -528,8 +528,8 @@ Last updated: 2026-04-12
 | **Fazier** | fazier.com | 81 | Dofollow | Free |
 | **StartupFA.me** | startupfa.me | 83 | Dofollow | Free |
 | **TinyLaunch** | tinylaunch.com | 71 | Dofollow | Free |
-| **PeerPush** | peerpush.co | 72 | Dofollow | Free |
-| **Open Launch** | openlaunch.co | 67 | Dofollow | Free |
+| **PeerPush** | peerpush.net | 72 | Dofollow | Free |
+| **Open Launch** | open-launch.com | 67 | Dofollow | Free |
 | **Slashdot** | slashdot.org | ~85 | Mixed | Free |
 | **Toolpilot** | toolpilot.ai | 77 | Dofollow | Free |
 | **AiTools** | aitools.fyi | 68 | Nofollow | Free |
