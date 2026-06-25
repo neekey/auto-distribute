@@ -21,17 +21,43 @@ If no `--project`, use the current working directory.
 
 ### Option A: API (recommended — automated)
 
-If `google-service-account.json` exists in the project root and the Search Console API is enabled in the associated GCP project, pull data directly:
+If `google-service-account.json` exists in the project root and the Search Console API is enabled in the associated GCP project, pull data directly.
+
+**First decide which window to use — this is the single most important methodology choice.** Look in `state/` for a prior `seo-analysis-*.json` (or check the project's memory):
+
+#### Case 1 — First audit of this site (no prior analysis)
+Use a wide window for the baseline "where do we rank" snapshot:
 
 ```bash
-# All reports (queries, pages, query-page combos, countries, devices, summary)
-# with comparison to the previous period
 node {auto-distribute-path}/scripts/gsc-report.mjs \
   --site {site-url-from-PRODUCT.md} \
   --days 90 --compare --project {project-path}
 ```
 
-Site URL format: URL-prefix property uses trailing slash (`https://example.com/`); domain property uses `sc-domain:example.com`. Output goes to `state/gsc-report.json`.
+#### Case 2 — RE-AUDIT (a prior analysis exists) — DEFAULT TO A SHORT, CHANGE-ANCHORED WINDOW
+The point of a re-audit is "did the change we shipped last time shift the result." A 90d/90d compare is the WRONG instrument: a 90-day average cannot see a 2-3-week-old change, and its comparison baseline is the quarter *before* — the recent signal gets averaged into noise. (This actively misled us once: a 90d view showed a page "unchanged" while it had in fact fallen out of rankings entirely weeks earlier.)
+
+1. Find the date the last change shipped (from the prior `seo-analysis-*.json` `files_written` / action notes, or project memory).
+2. Compute the post-change span in days (today − ship date) and run a **change-anchored** comparison — post-change window vs an equal-length window immediately before:
+
+   ```bash
+   # Example: change shipped 2026-06-02, today 2026-06-25 → ~23 days post-change
+   node {auto-distribute-path}/scripts/gsc-report.mjs \
+     --site {site-url} --days 23 --compare --project {project-path}
+   ```
+
+   If the change is older than ~4 weeks, just use `--days 28 --compare` as the standing cadence window.
+3. Also pull a short slice to catch decay / launch-honeymoon fade, per affected page:
+
+   ```bash
+   node {auto-distribute-path}/scripts/gsc-report.mjs \
+     --site {site-url} --days 14 --report pages --project {project-path}
+   ```
+
+4. **Confirm any movement with the query-page time series, NOT the page-average position.** Short windows are noisy for low-traffic pages, and a page-average position masks real per-query positions (a "pos 14" average can be a few long-tail terms at pos 5-7 plus the target head terms sitting at pos 40+). Short window detects movement; the per-query series confirms it's real.
+5. Optionally also keep one `--days 90` pull for the absolute ranking snapshot — but never use the 90d numbers to judge whether the last change worked.
+
+Site URL format: URL-prefix property uses trailing slash (`https://example.com/`); domain property uses `sc-domain:example.com`. **If a url-prefix request 403s with "insufficient permission," the property is likely a DOMAIN property — retry with `sc-domain:example.com`.** Output goes to `state/gsc-report.json` (each run overwrites it — re-pull the canonical window last).
 
 If the script returns a 403 with `SERVICE_DISABLED`, ask the user to enable the **Google Search Console API** at the URL printed in the error, wait ~1 minute, then retry.
 
@@ -191,6 +217,5 @@ Top performing pages and keywords — don't change these:
 
 ## When to Run This
 
-- **First time**: 2-4 weeks after publishing SEO content (Google needs time to index and rank)
-- **Ongoing**: Monthly to track progress and find new opportunities
-- **After major changes**: 2 weeks after content updates or site changes
+- **First time**: 2-4 weeks after publishing SEO content (Google needs time to index and rank). Use the wide 90d window (Step 2, Case 1).
+- **Ongoing / after changes**: every 2-4 weeks to measure whether the last change worked. Use the short, change-anchored window (Step 2, Case 2) — NOT 90d/90d. Matching the analysis window to the re-audit cadence is the whole point; a mismatched window wastes both the audit and the prior work.
