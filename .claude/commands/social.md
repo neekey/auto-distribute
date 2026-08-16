@@ -84,9 +84,9 @@ When `--project` is given, use that product's DB. Without `--project`, infer fro
 6. Present draft with subreddit-specific notes (which rules you're matching, why you chose the framing).
 7. On approval, post via `stride channel reddit post --subreddit <name> --title "..." --body "..."` and append to state with `source: "manual"`, `status: "sent"`.
 
-**Queue draft** — `/social draft-queue` (typically run headless via `claude -e "/social draft-queue --project ~/workspaces/numblr"` after the daily discovery cron):
+**Queue draft** — `/social draft-queue` (can be run headless via `claude -e "/social draft-queue --project ~/workspaces/numblr"`):
 
-The Reddit-discovery flow (Windmill, see `windmill/README.md`) writes candidate threads to a per-product Notion DB with `Status = New`. This mode walks that queue and pre-drafts replies for human review later.
+Walks a per-product Notion DB for rows with `Status = New` and pre-drafts replies for human review later. Candidate threads are added to that DB by hand — the Windmill flow that used to populate it on a daily cron was removed on 2026-08-16, so this mode only has work to do once you've queued some rows.
 
 **Status options on the DB:** `New`, `Reviewed`, `Reply Drafted`, `Replied`, `Skip`, `Archived`. This mode reads `New` and writes either `Reply Drafted` or `Skip`.
 

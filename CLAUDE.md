@@ -92,12 +92,6 @@ Media assets are stored in `assets/` (gitignored):
 - `AGENT-READINESS.md` — how to make sites discoverable/usable by AI agents (llms.txt, markdown negotiation, content signals, MCP server cards). `/seo-audit` scores against this via [isitagentready.com](https://isitagentready.com).
 - `AFFILIATE.md` — affiliate program setup: decision framework, commission economics, defensive package, Stripe + Tally setup, Tally API gotchas, outreach patterns. Consumed by `/affiliate`.
 
-## Windmill workflows
-
-Automated workflows that run on the local Windmill instance (`~/workspaces/windmill`). See `windmill/README.md` for full setup.
-
-- `windmill/flows/reddit-discovery-flow.json` (+ `windmill/scripts/reddit-search-score.ts`, `windmill/scripts/notion-write-candidates.ts`) — daily Reddit thread discovery → Notion DB. For each product (Numblr, Zahlhaus), searches target subs for question-shaped threads, dedupes against existing Notion rows, scores by relevance, writes top N as `Status: New` for manual review. Pair with `/social draft-queue` (auto-draft replies into Notion) or `/social reply <url>` (manual reply).
-
 ## Scripts
 
 Reusable scripts in `scripts/`:
@@ -244,7 +238,7 @@ All subcommands write JSON to stdout, log to stderr, exit non-zero on error. Pro
 3. Set `NOTION_API_KEY` in your shell env (or `direnv` per-project).
 4. `npm install` in auto-distribute if `node_modules/@notionhq/client` is missing.
 
-The Windmill `notion-write-candidates.ts` flow uses the same SDK with a typed Windmill resource (`$res:u/<user>/notion`); the local CLI is the same logic with an env-var token.
+The Reddit-discovery Notion DBs are now populated manually — the Windmill flow that used to write candidates on a daily cron was removed on 2026-08-16. `/social draft-queue` still walks whatever `Status: New` rows exist.
 
 ## State Tracking
 
